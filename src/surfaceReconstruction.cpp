@@ -89,7 +89,8 @@ void SurfaceReconstruction::reconstruct()
             Timer triangulateTimer(true);
             _surfaceTriangulation->triangulate(mesh, normals, false);
             auto elapsed = triangulateTimer.elapsed();
-            std::cout << "triangulation: " << std::fixed << elapsed.count() << " ms." << std::endl;
+            if (verbose)
+                std::cout << "triangulation: " << std::fixed << elapsed.count() << " ms." << std::endl;
         }
         else
             std::clog << "no model has been loaded." << std::endl;
