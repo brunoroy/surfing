@@ -2,8 +2,11 @@
 #define SURFACERECONSTRUCTION_H
 
 #include "surfaceTriangulation.h"
+#include "spatialGrid.h"
 #include "modelReader.h"
 #include "optionManager.h"
+
+typedef SpatialGrid<SpatialGridPoint> SpatialGridPoints;
 
 class SurfaceReconstruction
 {
@@ -17,6 +20,7 @@ private:
     std::shared_ptr<SurfaceTriangulation> _surfaceTriangulation;
     std::shared_ptr<OptionManager> _optionManager;
     std::shared_ptr<ModelReader> _modelReader;
+    std::shared_ptr<SpatialGridPoints> _spatialGrid;
 
     CloudVolume getCloudVolume(std::vector<glm::vec3> points);
 };

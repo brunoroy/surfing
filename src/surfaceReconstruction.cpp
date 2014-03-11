@@ -85,6 +85,9 @@ void SurfaceReconstruction::reconstruct()
                 std::clog << "; maximum[" << cloudVolume.maximum.x << "," << cloudVolume.maximum.y << "," << cloudVolume.maximum.z << "]";
                 std::clog << "; resolution(" << cloudVolume.resolution << ")." << std::endl;
             }
+
+            _spatialGrid.reset(new SpatialGridPoints(cloudVolume));
+
             _surfaceTriangulation.reset(new SurfaceTriangulation(cloudVolume));
             Timer triangulateTimer(true);
             _surfaceTriangulation->triangulate(mesh, normals, false);
