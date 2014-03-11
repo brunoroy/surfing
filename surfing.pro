@@ -5,9 +5,7 @@ TEMPLATE = app
 
 HEADERS += \
     include/*.h \
-    ../core/optionManager.h \
-    include/cloudVolume.h \
-    include/timer.h
+    ../core/optionManager.h
 
 SOURCES += \
     src/*.cpp
