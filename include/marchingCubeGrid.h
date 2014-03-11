@@ -32,6 +32,8 @@ public:
     void initializeGrid(const double cubeSize, const glm::vec3 minVolume, const glm::vec3 maxVolume);
     void triangulate(Mesh& mesh, std::vector<glm::vec3>& normals, bool computeNormals);
 
+    int getNbVertices() {return _resX*_resY*_resZ;}
+
 private:
     unsigned int _nbVertices;
     std::vector<int> _vertices;
@@ -51,6 +53,8 @@ private:
     glm::vec3 getVertexPosition(unsigned int xIndex, unsigned int yIndex, unsigned int zIndex);
     void setScalarValue(unsigned int xIndex, unsigned int yIndex, unsigned int zIndex, double value);
     bool hasVertexIndexes(std::vector<int> vertexIndexes);
+
+    void computeIsoValues(std::vector<unsigned int>& surfaceVertices, double influenceRadius, double particleRadius);
 };
 
 #endif // MARCHINGCUBEGRID_H

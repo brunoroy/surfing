@@ -14,6 +14,7 @@ public:
     SurfaceReconstruction(int argc, char** argv);
     ~SurfaceReconstruction();
 
+    void buildSpatialGrid(const std::vector<glm::vec3> points);
     void reconstruct();
 
 private:

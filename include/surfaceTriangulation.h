@@ -14,6 +14,8 @@ public:
 
 private:
     std::shared_ptr<MarchingCubeGrid> _grid;
+
+    std::shared_ptr<MarchingCubeGrid> getMarchingCubeGrid();
 };
 
 #endif // SURFACETRIANGULATION_H
