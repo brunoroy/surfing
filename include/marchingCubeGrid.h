@@ -3,7 +3,6 @@
 
 #include <thread>
 #include <vector>
-
 #include <glm/glm.hpp>
 
 #include "mesh.h"
@@ -50,7 +49,7 @@ private:
     unsigned int getEdgePoint(std::vector<MarchingCubeVertex>, int edgeNo, std::vector<glm::vec3>& points);
     unsigned int getIndex(unsigned int gridIndex, int component);
     glm::vec3 getVertexPosition(unsigned int xIndex, unsigned int yIndex, unsigned int zIndex);
-
+    void setScalarValue(unsigned int xIndex, unsigned int yIndex, unsigned int zIndex, double value);
     bool hasVertexIndexes(std::vector<int> vertexIndexes);
 };
 

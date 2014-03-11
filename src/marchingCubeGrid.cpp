@@ -181,6 +181,22 @@ glm::vec3 MarchingCubeGrid::getVertexPosition(unsigned int xIndex, unsigned int 
     return position;
 }
 
+void MarchingCubeGrid::setScalarValue(unsigned int xIndex, unsigned int yIndex, unsigned int zIndex, double value)
+{
+    int gridIndex = getGridIndex(xIndex, yIndex, zIndex);
+    int dataIndex = _vertices[gridIndex];
+
+    if (dataIndex < 0)
+    {
+        dataIndex = _verticesData.size();
+        _verticesData.push_back(MarchingCubeVertex());
+        _vertices[gridIndex] = dataIndex;
+        _verticesData[dataIndex].gridIndex = gridIndex;
+    }
+
+    _verticesData[dataIndex].value = value;
+}
+
 // Lorensen1987
 void MarchingCubeGrid::triangulate(Mesh& mesh, std::vector<glm::vec3>& normals, bool computeNormals)
 {
