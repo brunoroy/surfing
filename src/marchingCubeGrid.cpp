@@ -1,5 +1,6 @@
 #include "marchingCubeGrid.h"
 #include "marchingCubeLookupTable.h"
+#include "spatialGrid.h"
 
 MarchingCubeGrid::MarchingCubeGrid(const double cubeSize, const glm::vec3 minVolume, const glm::vec3 maxVolume)
 {
@@ -198,6 +199,181 @@ void MarchingCubeGrid::setScalarValue(unsigned int xIndex, unsigned int yIndex, 
 }
 
 // Lorensen1987
+void MarchingCubeGrid::computeIsoValues(std::vector<unsigned int>& surfaceVertices, double influenceRadius, double particleRadius)
+{
+    double influenceRadius2 = influenceRadius*influenceRadius;
+    double influenceRadius6 = pow(influenceRadius, 6);
+    std::vector<SpatialGridPoint*>	nearbyPoints;
+
+    // Init cells properties used to compute iso value
+    std::vector<double> sumWj;			// SUM(Wj)
+    std::vector<glm::mat3> sumRjGradWjT;	// SUM(rj*Gradient(Wj)')
+    std::vector<glm::vec3> sumGradWj;		// SUM(Gradient(Wj))
+    std::vector<glm::vec3> sumRjWj;		// SUM(rj*Wj)
+
+    int nbGridVertices = getNbVertices();
+    sumWj.resize(nbGridVertices, 0.0);
+    sumRjGradWjT.resize(nbGridVertices, glm::mat3(0));
+    sumGradWj.resize(nbGridVertices, glm::vec3(0.0,0.0,0.0));
+    sumRjWj.resize(nbGridVertices, glm::vec3(0.0,0.0,0.0));
+
+    // Compute cells isoValues
+    glm::vec3 vertexPos;
+    for (int c=0; c<surfaceVertices.size(); ++c)
+    {
+        unsigned int cellIndex = surfaceVertices[c];
+        unsigned int xIndex = getIndex(cellIndex, 0);
+        unsigned int yIndex = getIndex(cellIndex, 1);
+        unsigned int zIndex = getIndex(cellIndex, 2);
+        vertexPos = getVertexPosition(xIndex, yIndex, zIndex);
+
+        // Compute contribution of nearby particles
+        spatialGrid.getElements(vertexPos, influenceRadius, nearbyPoints);
+        std::vector<SpatialGridPoint*>::iterator it = nearbyPoints.begin();
+        std::vector<SpatialGridPoint*>::iterator itEnd = nearbyPoints.end();
+        for ( ; it!=itEnd; ++it)
+        {
+            glm::vec3 point = (*it)->pos;
+
+            // Is cell inside influence radius?
+            glm::vec3 delta(vertexPos);
+            delta -= point;
+
+            double dist2 = delta.x*delta.x + delta.y*delta.y + delta.z*delta.z;
+            if (dist2 < influenceRadius2)
+            {
+                // Compute kernel and it's gradient
+                double dist = sqrt(dist2);
+                double Wj = pow((1.0 - pow(dist/influenceRadius,2)), 3);
+                glm::vec3 gradWj(delta);
+                gradWj *= -6.0*pow(influenceRadius2-dist2, 2) / influenceRadius6;
+
+                // Update summation terms of cell
+                sumWj[cellIndex] += Wj;
+
+                sumRjGradWjT[cellIndex][0][0] += point.x*gradWj.x;
+                sumRjGradWjT[cellIndex][1][0] += point.x*gradWj.y;
+                sumRjGradWjT[cellIndex][2][0] += point.x*gradWj.z;
+                sumRjGradWjT[cellIndex][0][1] += point.y*gradWj.x;
+                sumRjGradWjT[cellIndex][1][1] += point.y*gradWj.y;
+                sumRjGradWjT[cellIndex][2][1] += point.y*gradWj.z;
+                sumRjGradWjT[cellIndex][0][2] += point.z*gradWj.x;
+                sumRjGradWjT[cellIndex][1][2] += point.z*gradWj.y;
+                sumRjGradWjT[cellIndex][2][2] += point.z*gradWj.z;
+
+                sumGradWj[cellIndex] += gradWj;
+
+                sumRjWj[cellIndex].x += point.x*Wj;
+                sumRjWj[cellIndex].y += point.y*Wj;
+                sumRjWj[cellIndex].z += point.z*Wj;
+            }
+        }
+
+        // Compute isoValue based on particles contributions
+        double isoValue = 1.0;
+        if (sumWj[cellIndex] > 0.0)
+        {
+            vertexPos = getVertexPosition(xIndex, yIndex, zIndex);
+
+            // Compute average position ( SUM(rj*Wj)/SUM(Wj) )
+            glm::vec3 averagePosition(sumRjWj[cellIndex]);
+            averagePosition /= sumWj[cellIndex];
+
+            // Compute the gradient of the average position
+            // (1/SUM(Wj)) * SUM(rj*gradWj') - (1/SUM(Wj)^2) * SUM(gradWj) * SUM(rj*Wj)'
+            glm::mat3 sumGradWjSumRjWjT;	// SUM(gradWj) * SUM(rj*Wj)'
+            sumGradWjSumRjWjT(0,0) = sumGradWj[cellIndex].x*sumRjWj[cellIndex].x;
+            sumGradWjSumRjWjT(0,1) = sumGradWj[cellIndex].x*sumRjWj[cellIndex].y;
+            sumGradWjSumRjWjT(0,2) = sumGradWj[cellIndex].x*sumRjWj[cellIndex].z;
+            sumGradWjSumRjWjT(1,0) = sumGradWj[cellIndex].y*sumRjWj[cellIndex].x;
+            sumGradWjSumRjWjT(1,1) = sumGradWj[cellIndex].y*sumRjWj[cellIndex].y;
+            sumGradWjSumRjWjT(1,2) = sumGradWj[cellIndex].y*sumRjWj[cellIndex].z;
+            sumGradWjSumRjWjT(2,0) = sumGradWj[cellIndex].z*sumRjWj[cellIndex].x;
+            sumGradWjSumRjWjT(2,1) = sumGradWj[cellIndex].z*sumRjWj[cellIndex].y;
+            sumGradWjSumRjWjT(2,2) = sumGradWj[cellIndex].z*sumRjWj[cellIndex].z;
+
+            Eigen::Matrix3d gradAvgPosition =
+                ((1.0/sumWj[cellIndex]) * sumRjGradWjT[cellIndex])
+                - ((1.0/(sumWj[cellIndex]*sumWj[cellIndex])) * sumGradWjSumRjWjT);
+
+            // Find maximum eigenvalue of the gradient using the
+            // Power method
+            double x[3] = { 1.0, 1.0, 1.0 };
+            double newX[3];
+            double maxValue, oldMaxValue = std::numeric_limits<double>::max();
+            double threshold = 0.00001;
+            double error = std::numeric_limits<double>::max();
+            for (int i=0; (error > threshold) && i<500; ++i)
+            {
+                newX[0] = gradAvgPosition(0,0)*x[0] + gradAvgPosition(0,1)*x[1] + gradAvgPosition(0,2)*x[2];
+                newX[1] = gradAvgPosition(1,0)*x[0] + gradAvgPosition(1,1)*x[1] + gradAvgPosition(1,2)*x[2];
+                newX[2] = gradAvgPosition(2,0)*x[0] + gradAvgPosition(2,1)*x[1] + gradAvgPosition(2,2)*x[2];
+
+                double absNewX0 = fabs(newX[0]);
+                double absNewX1 = fabs(newX[1]);
+                double absNewX2 = fabs(newX[2]);
+                if ( (absNewX0 >= absNewX1) && (absNewX0 >= absNewX2) )
+                {
+                    maxValue = newX[0];
+                }
+                else if (absNewX1 >= absNewX2)
+                {
+                    maxValue = newX[1];
+                }
+                else
+                {
+                    maxValue = newX[2];
+                }
+
+                if (maxValue==0.0)
+                {
+                    break;
+                }
+
+                x[0] = newX[0] / maxValue;
+                x[1] = newX[1] / maxValue;
+                x[2] = newX[2] / maxValue;
+
+                if (i>0)
+                {
+                    error = fabs(maxValue-oldMaxValue);
+                    oldMaxValue = maxValue;
+                }
+                else
+                {
+                    oldMaxValue = maxValue;
+                }
+                // TODO: We could check if maxValue moves away from range [tlow, thigh] and
+                // terminate earlier the algorithm! (Smarter, faster!)
+            }
+
+            double EVmax = fabs(maxValue);
+
+            // Compute Radius correction based on EVmax
+            double f = 1.0;
+            const double tHigh = 2.0;
+            const double tLow = 0.4;
+            if (EVmax > tLow)
+            {
+                if (EVmax > tHigh) EVmax = tHigh;
+                double gamma = (tHigh-EVmax) / (tHigh-tLow);
+                f = gamma*gamma*gamma - 3.0*gamma*gamma + 3.0*gamma;
+            }
+
+            // Compute isoValue!!! (Finally...)
+            Vector3DF deltaToAverage(vertexPos);
+            deltaToAverage -= averagePosition;
+
+            isoValue = sqrt(deltaToAverage.x*deltaToAverage.x +
+                                   deltaToAverage.y*deltaToAverage.y +
+                                   deltaToAverage.z*deltaToAverage.z);
+            isoValue -= particleRadius*f;
+        }
+
+        mcgrid.setScalarValue(ix, iy, iz, isoValue);
+    }
+}
+
 void MarchingCubeGrid::triangulate(Mesh& mesh, std::vector<glm::vec3>& normals, bool computeNormals)
 {
     std::vector<Mesh::Triangle>& triangles = mesh.triangles();

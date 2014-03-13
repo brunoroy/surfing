@@ -60,6 +60,13 @@ CloudVolume SurfaceReconstruction::getCloudVolume(std::vector<glm::vec3> points)
     return cloudVolume;
 }
 
+void SurfaceReconstruction::buildSpatialGrid(const std::vector<glm::vec3> points)
+{
+    int nbPoints = points.size();
+    for (int i = 0; i < nbPoints; ++i)
+        _spatialGrid->insert(SpatialGridPoint(points.at(i), i), points.at(i));
+}
+
 void SurfaceReconstruction::reconstruct()
 {
     Mesh mesh;
@@ -86,12 +93,17 @@ void SurfaceReconstruction::reconstruct()
                 std::clog << "; resolution(" << cloudVolume.resolution << ")." << std::endl;
             }
 
+            Timer spatialGridTimer(true);
             _spatialGrid.reset(new SpatialGridPoints(cloudVolume));
+            buildSpatialGrid(points);
+            auto elapsed = spatialGridTimer.elapsed();
+            if (verbose)
+                std::cout << "spatial grid: " << std::fixed << elapsed.count() << " ms." << std::endl;
 
             _surfaceTriangulation.reset(new SurfaceTriangulation(cloudVolume));
             Timer triangulateTimer(true);
             _surfaceTriangulation->triangulate(mesh, normals, false);
-            auto elapsed = triangulateTimer.elapsed();
+            elapsed = triangulateTimer.elapsed();
             if (verbose)
                 std::cout << "triangulation: " << std::fixed << elapsed.count() << " ms." << std::endl;
         }

@@ -13,3 +13,8 @@ void SurfaceTriangulation::triangulate(Mesh& mesh, std::vector<glm::vec3>& norma
 {
     _grid->triangulate(mesh, normals, computeNormals);
 }
+
+std::shared_ptr<MarchingCubeGrid> SurfaceTriangulation::getMarchingCubeGrid()
+{
+    return _grid;
+}
