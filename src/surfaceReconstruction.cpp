@@ -57,6 +57,10 @@ CloudVolume SurfaceReconstruction::getCloudVolume(std::vector<glm::vec3> points)
             cloudVolume.maximum.z = point.z;
     }
 
+    glm::vec3 offset(5.0 * resolution, 5.0 * resolution, 5.0 * resolution);
+    cloudVolume.minimum -= offset;
+    cloudVolume.maximum += offset;
+
     return cloudVolume;
 }
 
@@ -67,6 +71,74 @@ void SurfaceReconstruction::buildSpatialGrid(const std::vector<glm::vec3> points
         _spatialGrid->insert(SpatialGridPoint(points.at(i), i), points.at(i));
 
     //_surfaceTriangulation->computeIsoValues();
+}
+
+std::vector<unsigned int> SurfaceReconstruction::extractSurfacePoints(const std::vector<glm::vec3> points)
+{
+    std::vector<unsigned int> surfacePoints;
+    std::vector<SpatialGridPoint*> elements;
+
+    /*std::cout << "Res: " << spatialGrid.getResX() << ", " << spatialGrid.getResY() << ", "
+        << spatialGrid.getResZ() << std::endl;
+    std::cout << "Cellsize: " << spatialGrid.getCellSize() << std::endl;
+    std::cout << "Volume start: " << spatialGrid.getVolumeStart().x << ", " << spatialGrid.getVolumeStart().y
+        << ", " << spatialGrid.getVolumeStart().z << std::endl;*/
+
+    // Find non-empty cells (in spatial grid) with empty neighbors
+    int resX = _spatialGrid->getResX();
+    int resY = _spatialGrid->getResY();
+    int resZ = _spatialGrid->getResZ();
+    for (int xIndex = 0; xIndex < resX; ++xIndex)
+    {
+        for (int yIndex = 0; yIndex < resY; ++yIndex)
+        {
+            for (int zIndex = 0; zIndex < resZ; ++zIndex)
+            {
+                if (_spatialGrid->isCellEmpty(xIndex, yIndex, zIndex))
+                    continue;
+
+                // Check neighbors
+                bool hasEmptyNeighbor = false;
+                if (xIndex==0 || xIndex==resX-1 || yIndex==0 || yIndex==resY-1 || zIndex==0 || zIndex==resZ-1)
+                {
+                    hasEmptyNeighbor = true;
+                }
+                else
+                {
+                    for (int dx = -1; !hasEmptyNeighbor && dx<=1; ++dx)
+                    {
+                        for (int dy = -1; !hasEmptyNeighbor && dy<=1; ++dy)
+                        {
+                            for (int dz = -1; !hasEmptyNeighbor && dz<=1; ++dz)
+                            {
+                                if (dx == 0 && dy == 0 && dz == 0)
+                                    continue;
+
+                                if (_spatialGrid->isCellEmpty(xIndex + dx, yIndex + dy, zIndex + dz))
+                                {
+                                    hasEmptyNeighbor = true;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Add cell's points to surface points list if it's a surface cell
+                if (hasEmptyNeighbor)
+                {
+                    _spatialGrid->getElements(xIndex, yIndex, zIndex, elements);
+                    for (int e = 0;  e < elements.size(); ++e)
+                    {
+                        //surfacePoints.push_back(elements[e]->id);
+                        surfacePoints.push_back(elements[e]->id);
+                        //_surfacePoints[elements[e]->id] = 1.0;
+                    }
+                }
+            }
+        }
+    }
+
+    return surfacePoints;
 }
 
 void SurfaceReconstruction::reconstruct()
@@ -87,7 +159,7 @@ void SurfaceReconstruction::reconstruct()
             std::vector<glm::vec3> points = _modelReader->getPoints();
             if (verbose)
                 std::clog << points.size() << " points have been read." << std::endl;
-                CloudVolume cloudVolume = getCloudVolume(points);
+            CloudVolume cloudVolume = getCloudVolume(points);
             if (verbose)
             {
                 std::clog << "volume: minimum[" << cloudVolume.minimum.x << "," << cloudVolume.minimum.y << "," << cloudVolume.minimum.z << "]";
@@ -106,10 +178,21 @@ void SurfaceReconstruction::reconstruct()
             Timer triangulateTimer(true);
 
             std::shared_ptr<MarchingCubeGrid> grid = _surfaceTriangulation->getMarchingCubeGrid();
-            grid->computeIsoValues(points, cloudVolume.resolution, _spatialGrid);
 
-            //_surfaceTriangulation->getMarchingCubeGrid()->triangulate(mesh, normas, false);
-            _surfaceTriangulation->triangulate(mesh, normals, false);
+            Timer extractSurfacePointsTimer(true);
+            std::vector<unsigned int> surfacePoints = extractSurfacePoints(points);
+            elapsed = extractSurfacePointsTimer.elapsed();
+            if (verbose)
+                std::cout << "extract surface points: " << std::fixed << elapsed.count() << " ms." << std::endl;
+
+            Timer computerIsoValuesTimer(true);
+            grid->computeIsoValues(surfacePoints, cloudVolume.resolution, *_spatialGrid.get());
+            elapsed = computerIsoValuesTimer.elapsed();
+            if (verbose)
+                std::cout << "compute isovalues: " << std::fixed << elapsed.count() << " ms." << std::endl;
+
+            _surfaceTriangulation->getMarchingCubeGrid()->triangulate(mesh, normals, false);
+            //_surfaceTriangulation->triangulate(mesh, normals, false);
             elapsed = triangulateTimer.elapsed();
             if (verbose)
                 std::cout << "triangulation: " << std::fixed << elapsed.count() << " ms." << std::endl;

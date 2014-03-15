@@ -1,6 +1,8 @@
 #include "marchingCubeGrid.h"
 #include "marchingCubeLookupTable.h"
 
+#include <iostream>
+
 MarchingCubeGrid::MarchingCubeGrid(const double cubeSize, const glm::vec3 minVolume, const glm::vec3 maxVolume)
 {
     initializeGrid(cubeSize, minVolume, maxVolume);
@@ -23,6 +25,7 @@ void MarchingCubeGrid::initializeGrid(const double cubeSize, const glm::vec3 min
     _dimensions *= _cubeSize;
 
     _nbVertices = _resX*_resY*_resZ;
+    //std::cout << "resolution = [" << _resX <<  ", " << _resY << ", " << _resZ << "]" << std::endl;
     _vertices.resize(_nbVertices);
 
     for (unsigned int i = 0; i < _nbVertices; ++i)
@@ -198,7 +201,7 @@ void MarchingCubeGrid::setScalarValue(unsigned int xIndex, unsigned int yIndex, 
 }
 
 // Lorensen1987
-void MarchingCubeGrid::computeIsoValues(std::vector<unsigned int>& surfaceVertices, double influenceRadius, SpatialGrid<SpatialGridPoint> spatialGrid)
+void MarchingCubeGrid::computeIsoValues(std::vector<unsigned int> surfaceVertices, double influenceRadius, SpatialGridPoints spatialGrid)
 {
     double influenceRadius2 = influenceRadius*influenceRadius;
     double influenceRadius6 = pow(influenceRadius, 6);
@@ -408,7 +411,7 @@ void MarchingCubeGrid::triangulate(Mesh& mesh, std::vector<glm::vec3>& normals, 
                     vertices.push_back(_verticesData[vertexIndexes.at(i)]);
 
                 unsigned int cubeIndex = 0;
-                for (unsigned int i = 0; vertices.size(); ++i)
+                for (unsigned int i = 0; i < vertices.size(); ++i)
                     if (vertices.at(i).value < 0.0)
                         cubeIndex |= (int)(pow(2.0, (double)i));
 

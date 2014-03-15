@@ -56,6 +56,8 @@ private:
     CloudVolume _volume;
 };
 
+typedef SpatialGrid<SpatialGridPoint> SpatialGridPoints;
+
 template<class T>
 SpatialGrid<T>::SpatialGrid(const CloudVolume volume):
     _resX(0),

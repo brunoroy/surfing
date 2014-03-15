@@ -31,7 +31,7 @@ public:
     ~MarchingCubeGrid();
 
     void initializeGrid(const double cubeSize, const glm::vec3 minVolume, const glm::vec3 maxVolume);
-    void computeIsoValues(std::vector<unsigned int>& surfaceVertices, double influenceRadius, SpatialGrid<SpatialGridPoint> spatialGrid);
+    void computeIsoValues(std::vector<unsigned int> surfaceVertices, double influenceRadius, SpatialGridPoints spatialGrid);
     void triangulate(Mesh& mesh, std::vector<glm::vec3>& normals, bool computeNormals);
 
     int getNbVertices() {return _resX*_resY*_resZ;}

@@ -6,8 +6,6 @@
 #include "modelReader.h"
 #include "optionManager.h"
 
-typedef SpatialGrid<SpatialGridPoint> SpatialGridPoints;
-
 class SurfaceReconstruction
 {
 public:
@@ -15,6 +13,7 @@ public:
     ~SurfaceReconstruction();
 
     void buildSpatialGrid(const std::vector<glm::vec3> points);
+    std::vector<unsigned int> extractSurfacePoints(const std::vector<glm::vec3> points);
     void reconstruct();
 
 private:
