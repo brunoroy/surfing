@@ -9,10 +9,10 @@ SurfaceTriangulation::~SurfaceTriangulation()
 {
 }
 
-void SurfaceTriangulation::triangulate(Mesh& mesh, std::vector<glm::vec3>& normals, bool computeNormals)
+/*void SurfaceTriangulation::triangulate(Mesh& mesh, std::vector<glm::vec3>& normals, bool computeNormals)
 {
     _grid->triangulate(mesh, normals, computeNormals);
-}
+}*/
 
 std::shared_ptr<MarchingCubeGrid> SurfaceTriangulation::getMarchingCubeGrid()
 {

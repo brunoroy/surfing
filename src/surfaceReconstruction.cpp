@@ -65,6 +65,8 @@ void SurfaceReconstruction::buildSpatialGrid(const std::vector<glm::vec3> points
     int nbPoints = points.size();
     for (int i = 0; i < nbPoints; ++i)
         _spatialGrid->insert(SpatialGridPoint(points.at(i), i), points.at(i));
+
+    //_surfaceTriangulation->computeIsoValues();
 }
 
 void SurfaceReconstruction::reconstruct()
@@ -102,6 +104,11 @@ void SurfaceReconstruction::reconstruct()
 
             _surfaceTriangulation.reset(new SurfaceTriangulation(cloudVolume));
             Timer triangulateTimer(true);
+
+            std::shared_ptr<MarchingCubeGrid> grid = _surfaceTriangulation->getMarchingCubeGrid();
+            grid->computeIsoValues(points, cloudVolume.resolution, _spatialGrid);
+
+            //_surfaceTriangulation->getMarchingCubeGrid()->triangulate(mesh, normas, false);
             _surfaceTriangulation->triangulate(mesh, normals, false);
             elapsed = triangulateTimer.elapsed();
             if (verbose)

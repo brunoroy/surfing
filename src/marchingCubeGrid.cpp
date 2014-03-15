@@ -1,6 +1,5 @@
 #include "marchingCubeGrid.h"
 #include "marchingCubeLookupTable.h"
-#include "spatialGrid.h"
 
 MarchingCubeGrid::MarchingCubeGrid(const double cubeSize, const glm::vec3 minVolume, const glm::vec3 maxVolume)
 {
@@ -199,7 +198,7 @@ void MarchingCubeGrid::setScalarValue(unsigned int xIndex, unsigned int yIndex, 
 }
 
 // Lorensen1987
-void MarchingCubeGrid::computeIsoValues(std::vector<unsigned int>& surfaceVertices, double influenceRadius, double particleRadius)
+void MarchingCubeGrid::computeIsoValues(std::vector<unsigned int>& surfaceVertices, double influenceRadius, SpatialGrid<SpatialGridPoint> spatialGrid)
 {
     double influenceRadius2 = influenceRadius*influenceRadius;
     double influenceRadius6 = pow(influenceRadius, 6);
@@ -282,17 +281,17 @@ void MarchingCubeGrid::computeIsoValues(std::vector<unsigned int>& surfaceVertic
             // Compute the gradient of the average position
             // (1/SUM(Wj)) * SUM(rj*gradWj') - (1/SUM(Wj)^2) * SUM(gradWj) * SUM(rj*Wj)'
             glm::mat3 sumGradWjSumRjWjT;	// SUM(gradWj) * SUM(rj*Wj)'
-            sumGradWjSumRjWjT(0,0) = sumGradWj[cellIndex].x*sumRjWj[cellIndex].x;
-            sumGradWjSumRjWjT(0,1) = sumGradWj[cellIndex].x*sumRjWj[cellIndex].y;
-            sumGradWjSumRjWjT(0,2) = sumGradWj[cellIndex].x*sumRjWj[cellIndex].z;
-            sumGradWjSumRjWjT(1,0) = sumGradWj[cellIndex].y*sumRjWj[cellIndex].x;
-            sumGradWjSumRjWjT(1,1) = sumGradWj[cellIndex].y*sumRjWj[cellIndex].y;
-            sumGradWjSumRjWjT(1,2) = sumGradWj[cellIndex].y*sumRjWj[cellIndex].z;
-            sumGradWjSumRjWjT(2,0) = sumGradWj[cellIndex].z*sumRjWj[cellIndex].x;
-            sumGradWjSumRjWjT(2,1) = sumGradWj[cellIndex].z*sumRjWj[cellIndex].y;
-            sumGradWjSumRjWjT(2,2) = sumGradWj[cellIndex].z*sumRjWj[cellIndex].z;
+            sumGradWjSumRjWjT[0][0] = sumGradWj[cellIndex].x*sumRjWj[cellIndex].x;
+            sumGradWjSumRjWjT[0][1] = sumGradWj[cellIndex].x*sumRjWj[cellIndex].y;
+            sumGradWjSumRjWjT[0][2] = sumGradWj[cellIndex].x*sumRjWj[cellIndex].z;
+            sumGradWjSumRjWjT[1][0] = sumGradWj[cellIndex].y*sumRjWj[cellIndex].x;
+            sumGradWjSumRjWjT[1][1] = sumGradWj[cellIndex].y*sumRjWj[cellIndex].y;
+            sumGradWjSumRjWjT[1][2] = sumGradWj[cellIndex].y*sumRjWj[cellIndex].z;
+            sumGradWjSumRjWjT[2][0] = sumGradWj[cellIndex].z*sumRjWj[cellIndex].x;
+            sumGradWjSumRjWjT[2][1] = sumGradWj[cellIndex].z*sumRjWj[cellIndex].y;
+            sumGradWjSumRjWjT[2][2] = sumGradWj[cellIndex].z*sumRjWj[cellIndex].z;
 
-            Eigen::Matrix3d gradAvgPosition =
+            glm::mat3 gradAvgPosition =
                 ((1.0/sumWj[cellIndex]) * sumRjGradWjT[cellIndex])
                 - ((1.0/(sumWj[cellIndex]*sumWj[cellIndex])) * sumGradWjSumRjWjT);
 
@@ -305,9 +304,9 @@ void MarchingCubeGrid::computeIsoValues(std::vector<unsigned int>& surfaceVertic
             double error = std::numeric_limits<double>::max();
             for (int i=0; (error > threshold) && i<500; ++i)
             {
-                newX[0] = gradAvgPosition(0,0)*x[0] + gradAvgPosition(0,1)*x[1] + gradAvgPosition(0,2)*x[2];
-                newX[1] = gradAvgPosition(1,0)*x[0] + gradAvgPosition(1,1)*x[1] + gradAvgPosition(1,2)*x[2];
-                newX[2] = gradAvgPosition(2,0)*x[0] + gradAvgPosition(2,1)*x[1] + gradAvgPosition(2,2)*x[2];
+                newX[0] = gradAvgPosition[0][0]*x[0] + gradAvgPosition[0][1]*x[1] + gradAvgPosition[0][2]*x[2];
+                newX[1] = gradAvgPosition[1][0]*x[0] + gradAvgPosition[1][1]*x[1] + gradAvgPosition[1][2]*x[2];
+                newX[2] = gradAvgPosition[2][0]*x[0] + gradAvgPosition[2][1]*x[1] + gradAvgPosition[2][2]*x[2];
 
                 double absNewX0 = fabs(newX[0]);
                 double absNewX1 = fabs(newX[1]);
@@ -361,16 +360,16 @@ void MarchingCubeGrid::computeIsoValues(std::vector<unsigned int>& surfaceVertic
             }
 
             // Compute isoValue!!! (Finally...)
-            Vector3DF deltaToAverage(vertexPos);
+            glm::vec3 deltaToAverage(vertexPos);
             deltaToAverage -= averagePosition;
 
             isoValue = sqrt(deltaToAverage.x*deltaToAverage.x +
                                    deltaToAverage.y*deltaToAverage.y +
                                    deltaToAverage.z*deltaToAverage.z);
-            isoValue -= particleRadius*f;
+            //isoValue -= particleRadius*f;
         }
 
-        mcgrid.setScalarValue(ix, iy, iz, isoValue);
+        setScalarValue(xIndex, yIndex, zIndex, isoValue);
     }
 }
 
