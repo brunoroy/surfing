@@ -2,6 +2,9 @@
 
 #include "timer.h"
 
+#include <iostream>
+#include <fstream>
+
 static bool verbose = false;
 static char* modelPath = "models";
 static double resolution = 0.1;
@@ -141,10 +144,41 @@ std::vector<unsigned int> SurfaceReconstruction::extractSurfacePoints(const std:
     return surfacePoints;
 }
 
+void SurfaceReconstruction::writeHeaderOutput(std::ofstream& outputFile, const unsigned int nbPoints, const unsigned int nbFaces)
+{
+    outputFile << PLY_HEADER_FIRST_PART << nbPoints << std::endl;
+    outputFile << PLY_HEADER_SECOND_PART << std::endl;
+    outputFile << PLY_HEADER_THIRD_PART << nbFaces << std::endl;
+    outputFile << PLY_HEADER_LAST_PART << std::endl;
+}
+
+void SurfaceReconstruction::writeMeshOutput(Mesh mesh, const std::string filename)
+{
+    std::string meshFilename = std::string(filename).append(".mesh");
+    std::ofstream meshFile(meshFilename);
+
+    if (meshFile.is_open())
+    {
+        writeHeaderOutput(meshFile, mesh.points().size(), mesh.triangles().size());
+
+        for (int i = 0; i < mesh.points().size(); ++i)
+        {
+            meshFile << mesh.points().at(i).x << SPLIT_CHAR << mesh.points().at(i).y << SPLIT_CHAR << mesh.points().at(i).z << "1";
+            meshFile << mesh.normals().at(i).x << SPLIT_CHAR << mesh.normals().at(i).y << SPLIT_CHAR << mesh.normals().at(i).z << std::endl;
+        }
+
+        for (int i = 0; i < mesh.triangles().size(); ++i)
+        {
+            meshFile << "3" << SPLIT_CHAR << mesh.triangles().at(i).v[0] << SPLIT_CHAR << mesh.triangles().at(i).v[1] << SPLIT_CHAR << mesh.triangles().at(i).v[2] << std::endl;
+        }
+
+        meshFile.close();
+    }
+}
+
 void SurfaceReconstruction::reconstruct()
 {
     Mesh mesh;
-    std::vector<glm::vec3> normals;
 
     OptionParserError *error = NULL;
     if (_optionManager->parseOptions(&error))
@@ -157,6 +191,7 @@ void SurfaceReconstruction::reconstruct()
             if (verbose)
                 std::clog << "model file " << modelPath << " has been loaded." << std::endl;
             std::vector<glm::vec3> points = _modelReader->getPoints();
+            std::vector<glm::vec3> normals = _modelReader->getNormals();
             if (verbose)
                 std::clog << points.size() << " points have been read." << std::endl;
             CloudVolume cloudVolume = getCloudVolume(points);
@@ -175,7 +210,7 @@ void SurfaceReconstruction::reconstruct()
                 std::cout << "spatial grid: " << std::fixed << elapsed.count() << " ms." << std::endl;
 
             _surfaceTriangulation.reset(new SurfaceTriangulation(cloudVolume));
-            Timer triangulateTimer(true);
+
 
             std::shared_ptr<MarchingCubeGrid> grid = _surfaceTriangulation->getMarchingCubeGrid();
 
@@ -186,16 +221,24 @@ void SurfaceReconstruction::reconstruct()
                 std::cout << "extract surface points: " << std::fixed << elapsed.count() << " ms." << std::endl;
 
             Timer computerIsoValuesTimer(true);
-            grid->computeIsoValues(surfacePoints, cloudVolume.resolution, *_spatialGrid.get());
+            double influenceRadius = 5.0 * cloudVolume.resolution;
+            grid->computeIsoValues(surfacePoints, influenceRadius, *_spatialGrid.get());
             elapsed = computerIsoValuesTimer.elapsed();
             if (verbose)
                 std::cout << "compute isovalues: " << std::fixed << elapsed.count() << " ms." << std::endl;
 
+            Timer triangulateTimer(true);
             _surfaceTriangulation->getMarchingCubeGrid()->triangulate(mesh, normals, false);
             //_surfaceTriangulation->triangulate(mesh, normals, false);
             elapsed = triangulateTimer.elapsed();
             if (verbose)
                 std::cout << "triangulation: " << std::fixed << elapsed.count() << " ms." << std::endl;
+
+            Timer writeMeshTimer(true);
+            writeMeshOutput(mesh, modelPath);
+            elapsed = writeMeshTimer.elapsed();
+            if (verbose)
+                std::cout << "writing mesh file: " << std::fixed << elapsed.count() << " ms." << std::endl;
         }
         else
             std::clog << "no model has been loaded." << std::endl;

@@ -203,6 +203,7 @@ void MarchingCubeGrid::setScalarValue(unsigned int xIndex, unsigned int yIndex, 
 // Lorensen1987
 void MarchingCubeGrid::computeIsoValues(std::vector<unsigned int> surfaceVertices, double influenceRadius, SpatialGridPoints spatialGrid)
 {
+    double pointRadius = influenceRadius / 5.0;
     double influenceRadius2 = influenceRadius*influenceRadius;
     double influenceRadius6 = pow(influenceRadius, 6);
     std::vector<SpatialGridPoint*>	nearbyPoints;
@@ -369,17 +370,18 @@ void MarchingCubeGrid::computeIsoValues(std::vector<unsigned int> surfaceVertice
             isoValue = sqrt(deltaToAverage.x*deltaToAverage.x +
                                    deltaToAverage.y*deltaToAverage.y +
                                    deltaToAverage.z*deltaToAverage.z);
-            //isoValue -= particleRadius*f;
+            isoValue -= pointRadius*f;
         }
 
         setScalarValue(xIndex, yIndex, zIndex, isoValue);
     }
 }
 
-void MarchingCubeGrid::triangulate(Mesh& mesh, std::vector<glm::vec3>& normals, bool computeNormals)
+void MarchingCubeGrid::triangulate(Mesh& mesh, std::vector<glm::vec3> pointNormals, bool computeNormals)
 {
     std::vector<Mesh::Triangle>& triangles = mesh.triangles();
-    std::vector<glm::vec3>&points = mesh.points();
+    std::vector<glm::vec3>& points = mesh.points();
+    std::vector<glm::vec3>& normals = mesh.normals();
 
     if (computeNormals)
         updateNormals();
@@ -435,8 +437,9 @@ void MarchingCubeGrid::triangulate(Mesh& mesh, std::vector<glm::vec3>& normals, 
 
                         i += 3;
                     }
-                }
+                }                
             }
         }
+        normals.push_back(pointNormals.at(i));
     }
 }

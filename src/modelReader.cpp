@@ -94,3 +94,8 @@ std::vector<glm::vec3> ModelReader::getPoints()
 {
     return _points;
 }
+
+std::vector<glm::vec3> ModelReader::getNormals()
+{
+    return _normals;
+}

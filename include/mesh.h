@@ -27,10 +27,12 @@ public:
 
     std::vector<Triangle>& triangles() {return _triangles;}
     std::vector<glm::vec3>& points() {return _points;}
+    std::vector<glm::vec3>& normals() {return _normals;}
 
 private:
     std::vector<Triangle> _triangles;
     std::vector<glm::vec3> _points;
+    std::vector<glm::vec3> _normals;
 };
 
 #endif // MESH_H

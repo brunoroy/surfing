@@ -27,6 +27,7 @@ public:
     bool readModel(std::string path);
 
     std::vector<glm::vec3> getPoints();
+    std::vector<glm::vec3> getNormals();
 
 private:
     std::vector<glm::vec3> _points;
