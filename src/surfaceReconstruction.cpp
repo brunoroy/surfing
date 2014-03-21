@@ -214,15 +214,16 @@ void SurfaceReconstruction::reconstruct()
 
             std::shared_ptr<MarchingCubeGrid> grid = _surfaceTriangulation->getMarchingCubeGrid();
 
-            Timer extractSurfacePointsTimer(true);
+            /*Timer extractSurfacePointsTimer(true);
             std::vector<unsigned int> surfacePoints = extractSurfacePoints(points);
             elapsed = extractSurfacePointsTimer.elapsed();
             if (verbose)
-                std::cout << "extract surface points: " << std::fixed << elapsed.count() << " ms." << std::endl;
+                std::cout << "extract surface points: " << std::fixed << elapsed.count() << " ms." << std::endl;*/
 
             Timer computerIsoValuesTimer(true);
-            double influenceRadius = 5.0 * cloudVolume.resolution;
-            grid->computeIsoValues(surfacePoints, influenceRadius, *_spatialGrid.get());
+            double influenceRadius = 4.0 * cloudVolume.resolution;
+            //grid->computeIsoValues(surfacePoints, influenceRadius, *_spatialGrid.get());
+            grid->computeIsoValues(points, influenceRadius);
             elapsed = computerIsoValuesTimer.elapsed();
             if (verbose)
                 std::cout << "compute isovalues: " << std::fixed << elapsed.count() << " ms." << std::endl;

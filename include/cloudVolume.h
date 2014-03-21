@@ -5,6 +5,9 @@
 
 struct CloudVolume
 {
+    CloudVolume() {}
+    CloudVolume(glm::vec3 minimum, glm::vec3 maximum): minimum(minimum), maximum(maximum) {}
+
     double resolution;
     glm::vec3 minimum;
     glm::vec3 maximum;

@@ -31,7 +31,8 @@ public:
     ~MarchingCubeGrid();
 
     void initializeGrid(const double cubeSize, const glm::vec3 minVolume, const glm::vec3 maxVolume);
-    void computeIsoValues(std::vector<unsigned int> surfaceVertices, double influenceRadius, SpatialGridPoints spatialGrid);
+    //void computeIsoValues(std::vector<unsigned int> surfaceVertices, double influenceRadius, SpatialGridPoints spatialGrid);
+    void computeIsoValues(const std::vector<glm::vec3> points, double influenceRadius);
     void triangulate(Mesh& mesh, std::vector<glm::vec3> pointNormals, bool computeNormals);
 
     int getNbVertices() {return _resX*_resY*_resZ;}
@@ -53,6 +54,7 @@ private:
     unsigned int getEdgePoint(std::vector<MarchingCubeVertex>, int edgeNo, std::vector<glm::vec3>& points);
     unsigned int getIndex(unsigned int gridIndex, int component);
     glm::vec3 getVertexPosition(unsigned int xIndex, unsigned int yIndex, unsigned int zIndex);
+    CloudVolume getCellsInRadius(const glm::vec3 position, double radius);
     void setScalarValue(unsigned int xIndex, unsigned int yIndex, unsigned int zIndex, double value);
     bool hasVertexIndexes(std::vector<int> vertexIndexes);
 };
