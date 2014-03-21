@@ -18,8 +18,8 @@ public:
     SurfaceReconstruction(int argc, char** argv);
     ~SurfaceReconstruction();
 
-    void buildSpatialGrid(const std::vector<glm::vec3> points);
-    std::vector<unsigned int> extractSurfacePoints(const std::vector<glm::vec3> points);
+    void buildSpatialGrid(const std::vector<glm::dvec3> points);
+    std::vector<unsigned int> extractSurfacePoints(const std::vector<glm::dvec3> points);
     void writeMeshOutput(Mesh mesh, const std::string filename);
     void reconstruct();
 
@@ -29,7 +29,7 @@ private:
     std::shared_ptr<ModelReader> _modelReader;
     std::shared_ptr<SpatialGridPoints> _spatialGrid;
 
-    CloudVolume getCloudVolume(std::vector<glm::vec3> points);
+    CloudVolume getCloudVolume(std::vector<glm::dvec3> points);
     void writeHeaderOutput(std::ofstream& outputFile, const unsigned int nbPoints, const unsigned int nbFaces);
 };
 

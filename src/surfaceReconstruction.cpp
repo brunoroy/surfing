@@ -33,7 +33,7 @@ SurfaceReconstruction::~SurfaceReconstruction()
 {
 }
 
-CloudVolume SurfaceReconstruction::getCloudVolume(std::vector<glm::vec3> points)
+CloudVolume SurfaceReconstruction::getCloudVolume(std::vector<glm::dvec3> points)
 {
     CloudVolume cloudVolume;
     cloudVolume.minimum = points.at(0);
@@ -43,7 +43,7 @@ CloudVolume SurfaceReconstruction::getCloudVolume(std::vector<glm::vec3> points)
     int nbPoints = points.size();
     for (int i = 0; i < nbPoints; ++i)
     {
-        glm::vec3 point(points.at(i));
+        glm::dvec3 point(points.at(i));
 
         if (point.x < cloudVolume.minimum.x)
             cloudVolume.minimum.x = point.x;
@@ -60,14 +60,14 @@ CloudVolume SurfaceReconstruction::getCloudVolume(std::vector<glm::vec3> points)
             cloudVolume.maximum.z = point.z;
     }
 
-    glm::vec3 offset(5.0 * resolution, 5.0 * resolution, 5.0 * resolution);
+    glm::dvec3 offset(5.0 * resolution, 5.0 * resolution, 5.0 * resolution);
     cloudVolume.minimum -= offset;
     cloudVolume.maximum += offset;
 
     return cloudVolume;
 }
 
-void SurfaceReconstruction::buildSpatialGrid(const std::vector<glm::vec3> points)
+void SurfaceReconstruction::buildSpatialGrid(const std::vector<glm::dvec3> points)
 {
     int nbPoints = points.size();
     for (int i = 0; i < nbPoints; ++i)
@@ -76,7 +76,7 @@ void SurfaceReconstruction::buildSpatialGrid(const std::vector<glm::vec3> points
     //_surfaceTriangulation->computeIsoValues();
 }
 
-std::vector<unsigned int> SurfaceReconstruction::extractSurfacePoints(const std::vector<glm::vec3> points)
+std::vector<unsigned int> SurfaceReconstruction::extractSurfacePoints(const std::vector<glm::dvec3> points)
 {
     std::vector<unsigned int> surfacePoints;
     std::vector<SpatialGridPoint*> elements;
@@ -163,7 +163,7 @@ void SurfaceReconstruction::writeMeshOutput(Mesh mesh, const std::string filenam
 
         for (int i = 0; i < mesh.points().size(); ++i)
         {
-            meshFile << mesh.points().at(i).x << SPLIT_CHAR << mesh.points().at(i).y << SPLIT_CHAR << mesh.points().at(i).z << "1";
+            meshFile << mesh.points().at(i).x << SPLIT_CHAR << mesh.points().at(i).y << SPLIT_CHAR << mesh.points().at(i).z << " 1 ";
             meshFile << mesh.normals().at(i).x << SPLIT_CHAR << mesh.normals().at(i).y << SPLIT_CHAR << mesh.normals().at(i).z << std::endl;
         }
 
@@ -190,8 +190,8 @@ void SurfaceReconstruction::reconstruct()
         {
             if (verbose)
                 std::clog << "model file " << modelPath << " has been loaded." << std::endl;
-            std::vector<glm::vec3> points = _modelReader->getPoints();
-            std::vector<glm::vec3> normals = _modelReader->getNormals();
+            std::vector<glm::dvec3> points = _modelReader->getPoints();
+            std::vector<glm::dvec3> normals = _modelReader->getNormals();
             if (verbose)
                 std::clog << points.size() << " points have been read." << std::endl;
             CloudVolume cloudVolume = getCloudVolume(points);

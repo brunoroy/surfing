@@ -7,10 +7,10 @@
 
 struct SpatialGridPoint
 {
-    SpatialGridPoint(const glm::vec3& paramPos, unsigned int paramID):
+    SpatialGridPoint(const glm::dvec3& paramPos, unsigned int paramID):
         pos(paramPos), id(paramID) {}
 
-    glm::vec3 pos;
+    glm::dvec3 pos;
     unsigned int id;
 };
 
@@ -24,10 +24,10 @@ public:
     void initializeGrid(const CloudVolume volume);
     void clear();
 
-    void insert(const T& element, const glm::vec3& position);
-    void insert(const T& element, const glm::vec3& AABBmin, const glm::vec3& AABBmax);
+    void insert(const T& element, const glm::dvec3& position);
+    void insert(const T& element, const glm::dvec3& AABBmin, const glm::dvec3& AABBmax);
 
-    void getElements(const glm::vec3& position, double radius, std::vector<T*>& elements);
+    void getElements(const glm::dvec3& position, double radius, std::vector<T*>& elements);
     void getElements(int xIndex, int yIndex, int zIndex, std::vector<T*>& elements);
 
     unsigned int getNbCells() {return _grid.size();}
@@ -35,14 +35,14 @@ public:
     unsigned int getResY() {return _resY;}
     unsigned int getResZ() {return _resZ;}
     double getCellSize() {return _cellSize;}
-    glm::vec3 getVolumeStart() const {return _volume.minimum;}
+    glm::dvec3 getVolumeStart() const {return _volume.minimum;}
     bool isCellEmpty(int xIndex, int yIndex, int zIndex) {return _grid[getGridIndex(xIndex, yIndex, zIndex)].empty();}
 
 private:
     int getGridIndex(int xIndex, int yIndex, int zIndex);
-    int getXIndex(const glm::vec3& position);
-    int getYIndex(const glm::vec3& position);
-    int getZIndex(const glm::vec3& position);
+    int getXIndex(const glm::dvec3& position);
+    int getYIndex(const glm::dvec3& position);
+    int getZIndex(const glm::dvec3& position);
     int getXIndex(double xPos);
     int getYIndex(double yPos);
     int getZIndex(double zPos);
@@ -98,7 +98,7 @@ void SpatialGrid<T>::clear()
 }
 
 template<class T>
-void SpatialGrid<T>::insert(const T& element, const glm::vec3& position)
+void SpatialGrid<T>::insert(const T& element, const glm::dvec3& position)
 {
     int xIndex = getXIndex(position);
     int yIndex = getYIndex(position);
@@ -113,7 +113,7 @@ void SpatialGrid<T>::insert(const T& element, const glm::vec3& position)
 }
 
 template<class T>
-void SpatialGrid<T>::insert(const T& element, const glm::vec3& AABBmin, const glm::vec3& AABBmax)
+void SpatialGrid<T>::insert(const T& element, const glm::dvec3& AABBmin, const glm::dvec3& AABBmax)
 {
     int xMin = getXIndex(AABBmin.x);
     int yMin = getYIndex(AABBmin.y);
@@ -145,7 +145,7 @@ void SpatialGrid<T>::insert(const T& element, const glm::vec3& AABBmin, const gl
 }
 
 template<class T>
-void SpatialGrid<T>::getElements(const glm::vec3& position, double radius, std::vector<T*>&	elements)
+void SpatialGrid<T>::getElements(const glm::dvec3& position, double radius, std::vector<T*>&	elements)
 {
     int xMin = getXIndex(position.x - radius);
     int yMin = getYIndex(position.y - radius);
@@ -225,19 +225,19 @@ int SpatialGrid<T>::getGridIndex(int xIndex, int yIndex, int zIndex)
 }
 
 template<class T>
-int SpatialGrid<T>::getXIndex(const glm::vec3& position)
+int SpatialGrid<T>::getXIndex(const glm::dvec3& position)
 {
     return static_cast<int>(floor( (position.x-_volume.minimum.x)/_cellSize ));
 }
 
 template<class T>
-int SpatialGrid<T>::getYIndex(const glm::vec3& position)
+int SpatialGrid<T>::getYIndex(const glm::dvec3& position)
 {
     return static_cast<int>(floor( (position.y-_volume.minimum.y)/_cellSize ));
 }
 
 template<class T>
-int SpatialGrid<T>::getZIndex(const glm::vec3& position)
+int SpatialGrid<T>::getZIndex(const glm::dvec3& position)
 {
     return static_cast<int>(floor( (position.z-_volume.minimum.z)/_cellSize ));
 }
