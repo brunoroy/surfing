@@ -49,9 +49,15 @@ private:
     glm::dvec3 _volMin;
     glm::dvec3 _dimensions;
 
+    int _count;
+
     void updateNormals();
     unsigned int getGridIndex(unsigned int xIndex, unsigned int yIndex, unsigned int zIndex);
-    unsigned int getEdgePoint(std::vector<MarchingCubeVertex>, int edgeNo, std::vector<glm::dvec3>& points);
+    unsigned int getEdgePoint(std::vector<MarchingCubeVertex>& vertices, int edgeNo, std::vector<glm::dvec3>& points);
+    /*unsigned int getEdgePoint(MarchingCubeVertex& v1, MarchingCubeVertex& v2, MarchingCubeVertex& v3, MarchingCubeVertex& v4,
+                              MarchingCubeVertex& v5, MarchingCubeVertex& v6, MarchingCubeVertex& v7, MarchingCubeVertex& v8,
+                              int edgeNo,
+                              std::vector<glm::dvec3>& points);*/
     unsigned int getIndex(unsigned int gridIndex, int component);
     glm::dvec3 getVertexPosition(unsigned int xIndex, unsigned int yIndex, unsigned int zIndex);
     CloudVolume getCellsInRadius(const glm::dvec3 position, double radius);

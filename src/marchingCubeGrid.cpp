@@ -15,6 +15,8 @@ MarchingCubeGrid::~MarchingCubeGrid()
 
 void MarchingCubeGrid::initializeGrid(const double cubeSize, const glm::dvec3 minVolume, const glm::dvec3 maxVolume)
 {
+    _count = 0;
+
     _resX = static_cast<int>(std::ceil((maxVolume.x-minVolume.x)/cubeSize));
     _resY = static_cast<int>(std::ceil((maxVolume.y-minVolume.y)/cubeSize));
     _resZ = static_cast<int>(std::ceil((maxVolume.z-minVolume.z)/cubeSize));
@@ -62,7 +64,129 @@ unsigned int MarchingCubeGrid::getIndex(unsigned int gridIndex, int component)
     return index;
 }
 
-unsigned int MarchingCubeGrid::getEdgePoint(std::vector<MarchingCubeVertex> vertices, int edgeIndex, std::vector<glm::dvec3>& points)
+/*unsigned int MarchingCubeGrid::getEdgePoint(MarchingCubeVertex& v1,
+                                  MarchingCubeVertex& v2,
+                                  MarchingCubeVertex& v3,
+                                  MarchingCubeVertex& v4,
+                                  MarchingCubeVertex& v5,
+                                  MarchingCubeVertex& v6,
+                                  MarchingCubeVertex& v7,
+                                  MarchingCubeVertex& v8,
+                                  int edgeNo,
+                                  std::vector<glm::dvec3>& points)
+{
+    MarchingCubeVertex* va = 0x0;
+    MarchingCubeVertex* vb = 0x0;
+    int axis = 0;
+
+    // Get vertex and axis associated with the edge
+    if (edgeNo == 1)
+    {
+        va = &v1;
+        vb = &v2;
+        axis = 0;
+    }
+    else if (edgeNo == 2)
+    {
+        va = &v2;
+        vb = &v3;
+        axis = 1;
+    }
+    else if (edgeNo == 3)
+    {
+        va = &v4;
+        vb = &v3;
+        axis = 0;
+    }
+    else if (edgeNo == 4)
+    {
+        va = &v1;
+        vb = &v4;
+        axis = 1;
+    }
+    else if (edgeNo == 5)
+    {
+        va = &v5;
+        vb = &v6;
+        axis = 0;
+    }
+    else if (edgeNo == 6)
+    {
+        va = &v6;
+        vb = &v7;
+        axis = 1;
+    }
+    else if (edgeNo == 7)
+    {
+        va = &v8;
+        vb = &v7;
+        axis = 0;
+    }
+    else if (edgeNo == 8)
+    {
+        va = &v5;
+        vb = &v8;
+        axis = 1;
+    }
+    else if (edgeNo == 9)
+    {
+        va = &v1;
+        vb = &v5;
+        axis = 2;
+    }
+    else if (edgeNo == 10)
+    {
+        va = &v2;
+        vb = &v6;
+        axis = 2;
+    }
+    else if (edgeNo == 11)
+    {
+        va = &v4;
+        vb = &v8;
+        axis = 2;
+    }
+    else //if (edgeNo == 12)
+    {
+        va = &v3;
+        vb = &v7;
+        axis = 2;
+    }
+
+    // Get edge point index
+    int pointID = va->points[axis];
+    std::cout << "pointID: " << pointID << std::endl;
+    if (pointID == -1)
+    {
+        // Create point if it hasn't been created yet
+        // First compute position using linear interpolation
+        // between the two vertices
+        glm::dvec3 posA, posB, pos;
+        posA = getVertexPosition(getIndex(va->gridIndex, 0),
+                          getIndex(va->gridIndex, 1),
+                          getIndex(va->gridIndex, 2));
+        posB = getVertexPosition(getIndex(vb->gridIndex, 0),
+                          getIndex(vb->gridIndex, 1),
+                          getIndex(vb->gridIndex, 2));
+
+        double t = (0.0 - va->value) / (vb->value - va->value);
+
+        posA *= 1.0-t;
+        posB *= t;
+
+        pos = posA;
+        pos += posB;
+
+        // add point
+        pointID = points.size();
+        points.push_back(pos);
+        va->points[axis] = pointID;
+    }
+
+    return pointID;
+}*/
+
+unsigned int MarchingCubeGrid::getEdgePoint(std::vector<MarchingCubeVertex>& vertices, int edgeIndex, std::vector<glm::dvec3>& points)
 {
     MarchingCubeVertex* v1 = 0x0;
     MarchingCubeVertex* v2 = 0x0;
@@ -142,8 +266,11 @@ unsigned int MarchingCubeGrid::getEdgePoint(std::vector<MarchingCubeVertex> vert
     }
 
     int pointID = v1->points[axis];
+    std::cout << "pointID: " << pointID << std::endl;
     if (pointID == -1)
     {
+        _count++;
+
         glm::dvec3 pos1, pos2, pos;
         pos1 = getVertexPosition(getIndex(v1->gridIndex, 0),
                           getIndex(v1->gridIndex, 1),
@@ -161,7 +288,7 @@ unsigned int MarchingCubeGrid::getEdgePoint(std::vector<MarchingCubeVertex> vert
         points.push_back(pos);
         v1->points[axis] = pointID;
 
-        std::clog << points.size() << std::endl;
+        //std::clog << points.size() << std::endl;
     }
 
     return pointID;
@@ -460,9 +587,9 @@ void MarchingCubeGrid::computeIsoValues(const std::vector<glm::dvec3> points, do
             double error = std::numeric_limits<double>::max();
             for (int i=0; (error > threshold) && i<500; ++i)
             {
-                //newX[0] = gradAvgPosition[0][0]*x[0] + gradAvgPosition[0][1]*x[1] + gradAvgPosition[0][2]*x[2];
-                //newX[1] = gradAvgPosition[1][0]*x[0] + gradAvgPosition[1][1]*x[1] + gradAvgPosition[1][2]*x[2];
-                //newX[2] = gradAvgPosition[2][0]*x[0] + gradAvgPosition[2][1]*x[1] + gradAvgPosition[2][2]*x[2];
+                newX[0] = gradAvgPosition[0][0]*x[0] + gradAvgPosition[0][1]*x[1] + gradAvgPosition[0][2]*x[2];
+                newX[1] = gradAvgPosition[1][0]*x[0] + gradAvgPosition[1][1]*x[1] + gradAvgPosition[1][2]*x[2];
+                newX[2] = gradAvgPosition[2][0]*x[0] + gradAvgPosition[2][1]*x[1] + gradAvgPosition[2][2]*x[2];
 
                 double absNewX0 = fabs(newX[0]);
                 double absNewX1 = fabs(newX[1]);
@@ -722,12 +849,14 @@ void MarchingCubeGrid::triangulate(Mesh& mesh, std::vector<glm::dvec3> pointNorm
 {
     std::vector<Mesh::Triangle>& triangles = mesh.triangles();
     std::vector<glm::dvec3>& points = mesh.points();
+    std::cout << "mesh.points(): " << points.size() << std::endl;
     std::vector<glm::dvec3>& normals = mesh.normals();
 
     if (computeNormals)
         updateNormals();
 
     int nbVerticesData = _verticesData.size();
+    std::cout << "nbVerticesData: " << nbVerticesData << std::endl;
     for (int v = 0; v < nbVerticesData; ++v)
     {
         MarchingCubeVertex& vertex = _verticesData[v];
@@ -758,12 +887,28 @@ void MarchingCubeGrid::triangulate(Mesh& mesh, std::vector<glm::dvec3> pointNorm
                     if (vertices.at(i).value < 0.0)
                         cubeIndex |= (int)(pow(2.0, (double)i));
 
+                /*if (v > 10000 && v < 11000)
+                    std::cout << "cubeIndex: " << cubeIndex << std::endl;*/
+
                 if ((cubeIndex != 0) && (cubeIndex != 255))
                 {
                     int i = 0;
+                    //int j = 0;
                     while (MarchingCubeLookupTable::triangleList[cubeIndex][i] != -1)
                     {
+                        /*if (v == 45263)
+                            j++;*/
+
                         int p1, p2, p3;
+                        /*p1 = getEdgePoint(vertices.at(0), vertices.at(1), vertices.at(2), vertices.at(3), vertices.at(4), vertices.at(5), vertices.at(6), vertices.at(7),
+                                          MarchingCubeLookupTable::triangleList[cubeIndex][i+0]+1,
+                                          points);
+                        p2 = getEdgePoint(vertices.at(0), vertices.at(1), vertices.at(2), vertices.at(3), vertices.at(4), vertices.at(5), vertices.at(6), vertices.at(7),
+                                          MarchingCubeLookupTable::triangleList[cubeIndex][i+1]+1,
+                                          points);
+                        p3 = getEdgePoint(vertices.at(0), vertices.at(1), vertices.at(2), vertices.at(3), vertices.at(4), vertices.at(5), vertices.at(6), vertices.at(7),
+                                          MarchingCubeLookupTable::triangleList[cubeIndex][i+2]+1,
+                                          points);*/
                         p1 = getEdgePoint(vertices,
                                           MarchingCubeLookupTable::triangleList[cubeIndex][i+0]+1,
                                           points);
@@ -782,11 +927,18 @@ void MarchingCubeGrid::triangulate(Mesh& mesh, std::vector<glm::dvec3> pointNorm
 
                         i += 3;
                     }
+
+                    /*if (j != 0)
+                    {
+                        std::cout << "iterations[" << v << "]: " << j << std::endl;
+                    }*/
                 }                
             }
         }
         //normals.push_back(pointNormals.at(v));
     }
 
-    std::cout << "nbPoints: " << points.size() << std::endl;
+    std::cout << "nbPoints: " << _count << std::endl;
+
+    //std::cout << "nbPoints: " << points.size() << std::endl;
 }

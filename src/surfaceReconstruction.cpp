@@ -178,8 +178,6 @@ void SurfaceReconstruction::writeMeshOutput(Mesh mesh, const std::string filenam
 
 void SurfaceReconstruction::reconstruct()
 {
-    Mesh mesh;
-
     OptionParserError *error = NULL;
     if (_optionManager->parseOptions(&error))
     {
@@ -228,8 +226,9 @@ void SurfaceReconstruction::reconstruct()
             if (verbose)
                 std::cout << "compute isovalues: " << std::fixed << elapsed.count() << " ms." << std::endl;
 
+            Mesh mesh;
             Timer triangulateTimer(true);
-            _surfaceTriangulation->getMarchingCubeGrid()->triangulate(mesh, normals, false);
+            grid->triangulate(mesh, normals, false);
             //_surfaceTriangulation->triangulate(mesh, normals, false);
             elapsed = triangulateTimer.elapsed();
             if (verbose)

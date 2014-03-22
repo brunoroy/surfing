@@ -29,6 +29,10 @@ public:
     std::vector<glm::dvec3>& points() {return _points;}
     std::vector<glm::dvec3>& normals() {return _normals;}
 
+    const std::vector<Triangle>& triangles() const  {return _triangles;}
+    const std::vector<glm::dvec3>& points() const {return _points;}
+    const std::vector<glm::dvec3>& normals() const {return _normals;}
+
 private:
     std::vector<Triangle> _triangles;
     std::vector<glm::dvec3> _points;
