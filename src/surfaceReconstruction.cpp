@@ -72,76 +72,6 @@ void SurfaceReconstruction::buildSpatialGrid(const std::vector<glm::dvec3> point
     int nbPoints = points.size();
     for (int i = 0; i < nbPoints; ++i)
         _spatialGrid->insert(SpatialGridPoint(points.at(i), i), points.at(i));
-
-    //_surfaceTriangulation->computeIsoValues();
-}
-
-std::vector<unsigned int> SurfaceReconstruction::extractSurfacePoints(const std::vector<glm::dvec3> points)
-{
-    std::vector<unsigned int> surfacePoints;
-    std::vector<SpatialGridPoint*> elements;
-
-    /*std::cout << "Res: " << spatialGrid.getResX() << ", " << spatialGrid.getResY() << ", "
-        << spatialGrid.getResZ() << std::endl;
-    std::cout << "Cellsize: " << spatialGrid.getCellSize() << std::endl;
-    std::cout << "Volume start: " << spatialGrid.getVolumeStart().x << ", " << spatialGrid.getVolumeStart().y
-        << ", " << spatialGrid.getVolumeStart().z << std::endl;*/
-
-    // Find non-empty cells (in spatial grid) with empty neighbors
-    int resX = _spatialGrid->getResX();
-    int resY = _spatialGrid->getResY();
-    int resZ = _spatialGrid->getResZ();
-    for (int xIndex = 0; xIndex < resX; ++xIndex)
-    {
-        for (int yIndex = 0; yIndex < resY; ++yIndex)
-        {
-            for (int zIndex = 0; zIndex < resZ; ++zIndex)
-            {
-                if (_spatialGrid->isCellEmpty(xIndex, yIndex, zIndex))
-                    continue;
-
-                // Check neighbors
-                bool hasEmptyNeighbor = false;
-                if (xIndex==0 || xIndex==resX-1 || yIndex==0 || yIndex==resY-1 || zIndex==0 || zIndex==resZ-1)
-                {
-                    hasEmptyNeighbor = true;
-                }
-                else
-                {
-                    for (int dx = -1; !hasEmptyNeighbor && dx<=1; ++dx)
-                    {
-                        for (int dy = -1; !hasEmptyNeighbor && dy<=1; ++dy)
-                        {
-                            for (int dz = -1; !hasEmptyNeighbor && dz<=1; ++dz)
-                            {
-                                if (dx == 0 && dy == 0 && dz == 0)
-                                    continue;
-
-                                if (_spatialGrid->isCellEmpty(xIndex + dx, yIndex + dy, zIndex + dz))
-                                {
-                                    hasEmptyNeighbor = true;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Add cell's points to surface points list if it's a surface cell
-                if (hasEmptyNeighbor)
-                {
-                    _spatialGrid->getElements(xIndex, yIndex, zIndex, elements);
-                    for (int e = 0;  e < elements.size(); ++e)
-                    {
-                        //surfacePoints.push_back(elements[e]->id);
-                        surfacePoints.push_back(elements[e]->id);
-                        //_surfacePoints[elements[e]->id] = 1.0;
-                    }
-                }
-            }
-        }
-    }
-
-    return surfacePoints;
 }
 
 void SurfaceReconstruction::writeHeaderOutput(std::ofstream& outputFile, const unsigned int nbPoints, const unsigned int nbFaces)
@@ -154,7 +84,7 @@ void SurfaceReconstruction::writeHeaderOutput(std::ofstream& outputFile, const u
 
 void SurfaceReconstruction::writeMeshOutput(Mesh mesh, const std::string filename)
 {
-    std::string meshFilename = std::string(filename).append(".mesh");
+    std::string meshFilename = filename.substr(0, filename.find(".")).append("_mesh.ply");
     std::ofstream meshFile(meshFilename);
 
     if (meshFile.is_open())
@@ -164,8 +94,7 @@ void SurfaceReconstruction::writeMeshOutput(Mesh mesh, const std::string filenam
         for (int i = 0; i < mesh.points().size(); ++i)
         {
             meshFile << mesh.points().at(i).x << SPLIT_CHAR << mesh.points().at(i).y << SPLIT_CHAR << mesh.points().at(i).z << " 1 ";
-            meshFile << mesh.normals().at(i).x << SPLIT_CHAR << mesh.normals().at(i).y << SPLIT_CHAR << mesh.normals().at(i).z << std::endl;
-        }
+            meshFile << mesh.normals().at(i).x << SPLIT_CHAR << mesh.normals().at(i).y << SPLIT_CHAR << mesh.normals().at(i).z << std::endl;        }
 
         for (int i = 0; i < mesh.triangles().size(); ++i)
         {
@@ -208,19 +137,10 @@ void SurfaceReconstruction::reconstruct()
                 std::cout << "spatial grid: " << std::fixed << elapsed.count() << " ms." << std::endl;
 
             _surfaceTriangulation.reset(new SurfaceTriangulation(cloudVolume));
-
-
             std::shared_ptr<MarchingCubeGrid> grid = _surfaceTriangulation->getMarchingCubeGrid();
-
-            /*Timer extractSurfacePointsTimer(true);
-            std::vector<unsigned int> surfacePoints = extractSurfacePoints(points);
-            elapsed = extractSurfacePointsTimer.elapsed();
-            if (verbose)
-                std::cout << "extract surface points: " << std::fixed << elapsed.count() << " ms." << std::endl;*/
 
             Timer computerIsoValuesTimer(true);
             double influenceRadius = 4.0 * cloudVolume.resolution;
-            //grid->computeIsoValues(surfacePoints, influenceRadius, *_spatialGrid.get());
             grid->computeIsoValues(points, influenceRadius);
             elapsed = computerIsoValuesTimer.elapsed();
             if (verbose)
@@ -229,7 +149,6 @@ void SurfaceReconstruction::reconstruct()
             Mesh mesh;
             Timer triangulateTimer(true);
             grid->triangulate(mesh, normals, false);
-            //_surfaceTriangulation->triangulate(mesh, normals, false);
             elapsed = triangulateTimer.elapsed();
             if (verbose)
                 std::cout << "triangulation: " << std::fixed << elapsed.count() << " ms." << std::endl;
