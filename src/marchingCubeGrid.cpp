@@ -241,20 +241,17 @@ void MarchingCubeGrid::setScalarValue(unsigned int xIndex, unsigned int yIndex, 
 }
 
 // Lorensen1987
-void MarchingCubeGrid::computeIsoValues(const std::vector<glm::dvec3> points, double influenceRadius)
+void MarchingCubeGrid::computeIsoValues(const std::vector<glm::dvec3> points, double resolution)
 {
+    double influenceRadius = resolution * 4.0;
     double influenceRadius2 = influenceRadius*influenceRadius;
     double influenceRadius6 = pow(influenceRadius, 6);
 
     std::vector<double> sumWj;
-    std::vector<glm::dmat3x3> sumRjGradWjT;
-    std::vector<glm::dvec3> sumGradWj;
     std::vector<glm::dvec3> sumRjWj;
 
     int nbGridVertices = getNbVertices();
     sumWj.resize(nbGridVertices, 0.0);
-    sumRjGradWjT.resize(nbGridVertices, glm::dmat3x3(0.0));
-    sumGradWj.resize(nbGridVertices, glm::dvec3(0.0,0.0,0.0));
     sumRjWj.resize(nbGridVertices, glm::dvec3(0.0,0.0,0.0));
 
     int nbPoints = points.size();
@@ -287,18 +284,6 @@ void MarchingCubeGrid::computeIsoValues(const std::vector<glm::dvec3> points, do
 
                         sumWj[cellIndex] += Wj;
 
-                        sumRjGradWjT[cellIndex][0][0] += points[p].x*gradWj.x;
-                        sumRjGradWjT[cellIndex][1][0] += points[p].x*gradWj.y;
-                        sumRjGradWjT[cellIndex][2][0] += points[p].x*gradWj.z;
-                        sumRjGradWjT[cellIndex][0][1] += points[p].y*gradWj.x;
-                        sumRjGradWjT[cellIndex][1][1] += points[p].y*gradWj.y;
-                        sumRjGradWjT[cellIndex][2][1] += points[p].y*gradWj.z;
-                        sumRjGradWjT[cellIndex][0][2] += points[p].z*gradWj.x;
-                        sumRjGradWjT[cellIndex][1][2] += points[p].z*gradWj.y;
-                        sumRjGradWjT[cellIndex][2][2] += points[p].z*gradWj.z;
-
-                        sumGradWj[cellIndex] += gradWj;
-
                         sumRjWj[cellIndex].x += points[p].x*Wj;
                         sumRjWj[cellIndex].y += points[p].y*Wj;
                         sumRjWj[cellIndex].z += points[p].z*Wj;
@@ -309,127 +294,33 @@ void MarchingCubeGrid::computeIsoValues(const std::vector<glm::dvec3> points, do
     }
 
     glm::dvec3 vertexPos;
-    for (int c=0; c<nbGridVertices; ++c)
+    for (int c = 0; c < nbGridVertices; ++c)
     {
         unsigned int ix = getIndex(c, 0);
         unsigned int iy = getIndex(c, 1);
         unsigned int iz = getIndex(c, 2);
 
         double isoValue = 1.0;
-        if (sumWj[c] > 0.0)
-        {
-            vertexPos = getVertexPosition(ix, iy, iz);
+        vertexPos = getVertexPosition(ix, iy, iz);
 
-            glm::dvec3 averagePosition(sumRjWj[c]);
-            averagePosition /= sumWj[c];
+        glm::dvec3 averagePosition(sumRjWj[c]);
+        averagePosition /= sumWj[c];
 
-            glm::dmat3x3 sumGradWjSumRjWjT;
-            sumGradWjSumRjWjT[0][0] = sumGradWj[c].x*sumRjWj[c].x;
-            sumGradWjSumRjWjT[0][1] = sumGradWj[c].x*sumRjWj[c].y;
-            sumGradWjSumRjWjT[0][2] = sumGradWj[c].x*sumRjWj[c].z;
-            sumGradWjSumRjWjT[1][0] = sumGradWj[c].y*sumRjWj[c].x;
-            sumGradWjSumRjWjT[1][1] = sumGradWj[c].y*sumRjWj[c].y;
-            sumGradWjSumRjWjT[1][2] = sumGradWj[c].y*sumRjWj[c].z;
-            sumGradWjSumRjWjT[2][0] = sumGradWj[c].z*sumRjWj[c].x;
-            sumGradWjSumRjWjT[2][1] = sumGradWj[c].z*sumRjWj[c].y;
-            sumGradWjSumRjWjT[2][2] = sumGradWj[c].z*sumRjWj[c].z;
+        glm::dvec3 deltaToAverage(vertexPos);
+        deltaToAverage -= averagePosition;
 
-            double apTerm1 = 1.0/sumWj[c];
-            glm::mat3x3 apTerm2;
-            for (int i = 0; i <= 2; ++i)
-                for (int j = 0; j <= 2; ++j)
-                    apTerm2[i][j] = apTerm1 * sumRjGradWjT[c][i][j];
-
-            double apTerm3 = 1.0/(sumWj[c]*sumWj[c]);
-            glm::mat3x3 gradAvgPosition;
-            for (int i = 0; i <= 2; ++i)
-                for (int j = 0; j <= 2; ++j)
-                {
-                    double apTerm2IJ = apTerm2[i][j];
-                    double sumIJ = sumGradWjSumRjWjT[i][j];
-                    gradAvgPosition[i][j] = apTerm2IJ - (apTerm3 * sumIJ);
-                }
-
-            double x[3] = { 1.0, 1.0, 1.0 };
-            double newX[3];
-            double maxValue, oldMaxValue = std::numeric_limits<double>::max();
-            double threshold = 0.00001;
-            double error = std::numeric_limits<double>::max();
-            for (int i=0; (error > threshold) && i<500; ++i)
-            {
-                newX[0] = gradAvgPosition[0][0]*x[0] + gradAvgPosition[0][1]*x[1] + gradAvgPosition[0][2]*x[2];
-                newX[1] = gradAvgPosition[1][0]*x[0] + gradAvgPosition[1][1]*x[1] + gradAvgPosition[1][2]*x[2];
-                newX[2] = gradAvgPosition[2][0]*x[0] + gradAvgPosition[2][1]*x[1] + gradAvgPosition[2][2]*x[2];
-
-                double absNewX0 = fabs(newX[0]);
-                double absNewX1 = fabs(newX[1]);
-                double absNewX2 = fabs(newX[2]);
-                if ( (absNewX0 >= absNewX1) && (absNewX0 >= absNewX2) )
-                {
-                    maxValue = newX[0];
-                }
-                else if (absNewX1 >= absNewX2)
-                {
-                    maxValue = newX[1];
-                }
-                else
-                {
-                    maxValue = newX[2];
-                }
-
-                if (maxValue==0.0)
-                {
-                    break;
-                }
-
-                x[0] = newX[0] / maxValue;
-                x[1] = newX[1] / maxValue;
-                x[2] = newX[2] / maxValue;
-
-                if (i>0)
-                {
-                    error = fabs(maxValue-oldMaxValue);
-                    oldMaxValue = maxValue;
-                }
-                else
-                {
-                    oldMaxValue = maxValue;
-                }
-            }
-
-            double EVmax = fabs(maxValue);
-
-            double f = 1.0;
-            const double tHigh = 2.0;
-            const double tLow = 0.4;
-            if (EVmax > tLow)
-            {
-                if (EVmax > tHigh) EVmax = tHigh;
-                double gamma = (tHigh-EVmax) / (tHigh-tLow);
-                f = gamma*gamma*gamma - 3.0*gamma*gamma + 3.0*gamma;
-            }
-
-            glm::dvec3 deltaToAverage(vertexPos);
-            deltaToAverage -= averagePosition;
-
-            isoValue = sqrt(deltaToAverage.x*deltaToAverage.x +
-                                   deltaToAverage.y*deltaToAverage.y +
-                                   deltaToAverage.z*deltaToAverage.z);
-            isoValue -= (influenceRadius/4.0)*f;
-        }
-
+        isoValue = sqrt(deltaToAverage.x*deltaToAverage.x +
+                               deltaToAverage.y*deltaToAverage.y +
+                               deltaToAverage.z*deltaToAverage.z);
+        isoValue -= resolution;
         setScalarValue(ix, iy, iz, isoValue);
     }
 }
 
-void MarchingCubeGrid::triangulate(Mesh& mesh, std::vector<glm::dvec3> pointNormals, bool computeNormals)
+void MarchingCubeGrid::triangulate(Mesh& mesh)
 {
     std::vector<Mesh::Triangle>& triangles = mesh.triangles();
     std::vector<glm::dvec3>& points = mesh.points();
-    std::vector<glm::dvec3>& normals = mesh.normals();
-
-    if (computeNormals)
-        updateNormals();
 
     int nbVerticesData = _verticesData.size();
     for (int v = 0; v < nbVerticesData; ++v)
@@ -489,10 +380,6 @@ void MarchingCubeGrid::triangulate(Mesh& mesh, std::vector<glm::dvec3> pointNorm
                                           points);
 
                         triangles.push_back(Mesh::Triangle(p1, p2, p3));
-
-                        normals.push_back(pointNormals.at(i/3));
-                        normals.push_back(pointNormals.at(i/3+1));
-                        normals.push_back(pointNormals.at(i/3+2));
 
                         i += 3;
                     }

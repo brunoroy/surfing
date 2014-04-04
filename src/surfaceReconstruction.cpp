@@ -92,14 +92,10 @@ void SurfaceReconstruction::writeMeshOutput(Mesh mesh, const std::string filenam
         writeHeaderOutput(meshFile, mesh.points().size(), mesh.triangles().size());
 
         for (int i = 0; i < mesh.points().size(); ++i)
-        {
             meshFile << mesh.points().at(i).x << SPLIT_CHAR << mesh.points().at(i).y << SPLIT_CHAR << mesh.points().at(i).z << " 1 ";
-            meshFile << mesh.normals().at(i).x << SPLIT_CHAR << mesh.normals().at(i).y << SPLIT_CHAR << mesh.normals().at(i).z << std::endl;        }
 
         for (int i = 0; i < mesh.triangles().size(); ++i)
-        {
             meshFile << "3" << SPLIT_CHAR << mesh.triangles().at(i).v[0] << SPLIT_CHAR << mesh.triangles().at(i).v[1] << SPLIT_CHAR << mesh.triangles().at(i).v[2] << std::endl;
-        }
 
         meshFile.close();
     }
@@ -118,7 +114,6 @@ void SurfaceReconstruction::reconstruct()
             if (verbose)
                 std::clog << "model file " << modelPath << " has been loaded." << std::endl;
             std::vector<glm::dvec3> points = _modelReader->getPoints();
-            std::vector<glm::dvec3> normals = _modelReader->getNormals();
             if (verbose)
                 std::clog << points.size() << " points have been read." << std::endl;
             CloudVolume cloudVolume = getCloudVolume(points);
@@ -140,15 +135,14 @@ void SurfaceReconstruction::reconstruct()
             std::shared_ptr<MarchingCubeGrid> grid = _surfaceTriangulation->getMarchingCubeGrid();
 
             Timer computerIsoValuesTimer(true);
-            double influenceRadius = 4.0 * cloudVolume.resolution;
-            grid->computeIsoValues(points, influenceRadius);
+            grid->computeIsoValues(points, cloudVolume.resolution);
             elapsed = computerIsoValuesTimer.elapsed();
             if (verbose)
                 std::cout << "compute isovalues: " << std::fixed << elapsed.count() << " ms." << std::endl;
 
             Mesh mesh;
             Timer triangulateTimer(true);
-            grid->triangulate(mesh, normals, false);
+            grid->triangulate(mesh);
             elapsed = triangulateTimer.elapsed();
             if (verbose)
                 std::cout << "triangulation: " << std::fixed << elapsed.count() << " ms." << std::endl;
