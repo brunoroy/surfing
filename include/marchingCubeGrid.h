@@ -23,15 +23,16 @@ public:
         double value;
         int points[3];
         int gridIndex;
-        glm::dvec3 normal;
+        glm::vec3 normal;
     };
 
 public:
-    MarchingCubeGrid(const double cubeSize, const glm::dvec3 minVolume, const glm::dvec3 maxVolume);
+    MarchingCubeGrid();
+    MarchingCubeGrid(const double cubeSize, const glm::vec3 minVolume, const glm::vec3 maxVolume);
     ~MarchingCubeGrid();
 
-    void initializeGrid(const double cubeSize, const glm::dvec3 minVolume, const glm::dvec3 maxVolume);
-    void computeIsoValues(const std::vector<glm::dvec3> points, double resolution);
+    void initializeGrid(const double cubeSize, const glm::vec3 minVolume, const glm::vec3 maxVolume);
+    void computeIsoValues(const std::vector<glm::vec3> points, double resolution);
     void triangulate(Mesh& mesh);
 
     int getNbVertices() {return _resX*_resY*_resZ;}
@@ -45,8 +46,8 @@ private:
     unsigned int _resY;
     unsigned int _resZ;
     double _cubeSize;
-    glm::dvec3 _volMin;
-    glm::dvec3 _dimensions;
+    glm::vec3 _volMin;
+    glm::vec3 _dimensions;
 
     int _count;
 
@@ -55,10 +56,10 @@ private:
     unsigned int getEdgePoint(MarchingCubeVertex& v1, MarchingCubeVertex& v2, MarchingCubeVertex& v3, MarchingCubeVertex& v4,
                               MarchingCubeVertex& v5, MarchingCubeVertex& v6, MarchingCubeVertex& v7, MarchingCubeVertex& v8,
                               int edgeNo,
-                              std::vector<glm::dvec3>& points);
+                              std::vector<glm::vec3>& points);
     unsigned int getIndex(unsigned int gridIndex, int component);
-    glm::dvec3 getVertexPosition(unsigned int xIndex, unsigned int yIndex, unsigned int zIndex);
-    CloudVolume getCellsInRadius(const glm::dvec3 position, double radius);
+    glm::vec3 getVertexPosition(unsigned int xIndex, unsigned int yIndex, unsigned int zIndex);
+    CloudVolume getCellsInRadius(const glm::vec3 position, double radius);
     void setScalarValue(unsigned int xIndex, unsigned int yIndex, unsigned int zIndex, double value);
     bool hasVertexIndexes(std::vector<int> vertexIndexes);
 };

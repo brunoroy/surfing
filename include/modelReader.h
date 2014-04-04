@@ -26,12 +26,12 @@ public:
     std::string getFileExtension(const std::string filename);
     bool readModel(std::string path);
 
-    std::vector<glm::dvec3> getPoints();
-    std::vector<glm::dvec3> getNormals();
+    std::vector<glm::vec3> getPoints();
+    std::vector<glm::vec3> getNormals();
 
 private:
-    std::vector<glm::dvec3> _points;
-    std::vector<glm::dvec3> _normals;
+    std::vector<glm::vec3> _points;
+    std::vector<glm::vec3> _normals;
 
     std::vector<std::string> split(const std::string input);
 };

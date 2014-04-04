@@ -3,8 +3,22 @@
 
 #include <iostream>
 #include <array>
+#include <math.h>
 
-MarchingCubeGrid::MarchingCubeGrid(const double cubeSize, const glm::dvec3 minVolume, const glm::dvec3 maxVolume)
+MarchingCubeGrid::MarchingCubeGrid():
+    _resX(0),
+    _resY(0),
+    _resZ(0),
+    _cubeSize(0.0)
+{
+
+}
+
+MarchingCubeGrid::MarchingCubeGrid(const double cubeSize, const glm::vec3 minVolume, const glm::vec3 maxVolume):
+    _resX(0),
+    _resY(0),
+    _resZ(0),
+    _cubeSize(0.0)
 {
     initializeGrid(cubeSize, minVolume, maxVolume);
 }
@@ -13,18 +27,18 @@ MarchingCubeGrid::~MarchingCubeGrid()
 {
 }
 
-void MarchingCubeGrid::initializeGrid(const double cubeSize, const glm::dvec3 minVolume, const glm::dvec3 maxVolume)
+void MarchingCubeGrid::initializeGrid(const double cubeSize, const glm::vec3 minVolume, const glm::vec3 maxVolume)
 {
     _count = 0;
 
-    _resX = static_cast<int>(std::ceil((maxVolume.x-minVolume.x)/cubeSize));
-    _resY = static_cast<int>(std::ceil((maxVolume.y-minVolume.y)/cubeSize));
-    _resZ = static_cast<int>(std::ceil((maxVolume.z-minVolume.z)/cubeSize));
+    _resX = static_cast<int>(ceil((maxVolume.x-minVolume.x)/cubeSize));
+    _resY = static_cast<int>(ceil((maxVolume.y-minVolume.y)/cubeSize));
+    _resZ = static_cast<int>(ceil((maxVolume.z-minVolume.z)/cubeSize));
 
     _cubeSize = cubeSize;
     _volMin = minVolume;
 
-    _dimensions = glm::dvec3(_resX, _resY, _resZ);
+    _dimensions = glm::vec3(_resX, _resY, _resZ);
     _dimensions *= _cubeSize;
 
     _nbVertices = _resX*_resY*_resZ;
@@ -72,7 +86,7 @@ unsigned int MarchingCubeGrid::getEdgePoint(MarchingCubeVertex& v1,
                                             MarchingCubeVertex& v7,
                                             MarchingCubeVertex& v8,
                                             int edgeNo,
-                                            std::vector<glm::dvec3>& points)
+                                            std::vector<glm::vec3>& points)
 {
     MarchingCubeVertex* va = 0x0;
     MarchingCubeVertex* vb = 0x0;
@@ -154,7 +168,7 @@ unsigned int MarchingCubeGrid::getEdgePoint(MarchingCubeVertex& v1,
     int pointID = va->points[axis];
     if (pointID == -1)
     {
-        glm::dvec3 posA, posB, pos;
+        glm::vec3 posA, posB, pos;
         posA = getVertexPosition(getIndex(va->gridIndex, 0),
                           getIndex(va->gridIndex, 1),
                           getIndex(va->gridIndex, 2));
@@ -187,7 +201,7 @@ bool MarchingCubeGrid::hasVertexIndexes(std::vector<int> vertexIndexes)
     return true;
 }
 
-CloudVolume MarchingCubeGrid::getCellsInRadius(const glm::dvec3 position, double radius)
+CloudVolume MarchingCubeGrid::getCellsInRadius(const glm::vec3 position, double radius)
 {
     CloudVolume volume;
 
@@ -213,11 +227,11 @@ CloudVolume MarchingCubeGrid::getCellsInRadius(const glm::dvec3 position, double
     return volume;
 }
 
-glm::dvec3 MarchingCubeGrid::getVertexPosition(unsigned int xIndex, unsigned int yIndex, unsigned int zIndex)
+glm::vec3 MarchingCubeGrid::getVertexPosition(unsigned int xIndex, unsigned int yIndex, unsigned int zIndex)
 {
-    glm::dvec3 position;
+    glm::vec3 position;
 
-    position = glm::dvec3(xIndex, yIndex, zIndex);
+    position = glm::vec3(xIndex, yIndex, zIndex);
     position *= _cubeSize;
     position += _volMin;
 
@@ -241,18 +255,18 @@ void MarchingCubeGrid::setScalarValue(unsigned int xIndex, unsigned int yIndex, 
 }
 
 // Lorensen1987
-void MarchingCubeGrid::computeIsoValues(const std::vector<glm::dvec3> points, double resolution)
+void MarchingCubeGrid::computeIsoValues(const std::vector<glm::vec3> points, double resolution)
 {
     double influenceRadius = resolution * 4.0;
     double influenceRadius2 = influenceRadius*influenceRadius;
     double influenceRadius6 = pow(influenceRadius, 6);
 
     std::vector<double> sumWj;
-    std::vector<glm::dvec3> sumRjWj;
+    std::vector<glm::vec3> sumRjWj;
 
     int nbGridVertices = getNbVertices();
     sumWj.resize(nbGridVertices, 0.0);
-    sumRjWj.resize(nbGridVertices, glm::dvec3(0.0,0.0,0.0));
+    sumRjWj.resize(nbGridVertices, glm::vec3(0.0,0.0,0.0));
 
     int nbPoints = points.size();
     for (int p = 0; p < nbPoints; ++p)
@@ -260,7 +274,7 @@ void MarchingCubeGrid::computeIsoValues(const std::vector<glm::dvec3> points, do
         CloudVolume volume;
         volume = getCellsInRadius(points[p], influenceRadius);
 
-        glm::dvec3 vertexPos;
+        glm::vec3 vertexPos;
         for (int iz=volume.minimum.z; iz<=volume.maximum.z; ++iz)
         {
             for (int iy=volume.minimum.y; iy<=volume.maximum.y; ++iy)
@@ -270,7 +284,7 @@ void MarchingCubeGrid::computeIsoValues(const std::vector<glm::dvec3> points, do
                     unsigned int cellIndex = getGridIndex(ix, iy, iz);
                     vertexPos = getVertexPosition(ix, iy, iz);
 
-                    glm::dvec3 delta(vertexPos);
+                    glm::vec3 delta(vertexPos);
                     delta -= points[p];
 
                     double dist2 = delta.x*delta.x + delta.y*delta.y + delta.z*delta.z;
@@ -279,7 +293,7 @@ void MarchingCubeGrid::computeIsoValues(const std::vector<glm::dvec3> points, do
                         double dist = sqrt(dist2);
                         double Wj = pow((1.0 - pow(dist/influenceRadius,2)), 3);
 
-                        glm::dvec3 gradWj(delta);
+                        glm::vec3 gradWj(delta);
                         gradWj *= -6.0*pow(influenceRadius2-dist2, 2) / influenceRadius6;
 
                         sumWj[cellIndex] += Wj;
@@ -293,7 +307,7 @@ void MarchingCubeGrid::computeIsoValues(const std::vector<glm::dvec3> points, do
         }
     }
 
-    glm::dvec3 vertexPos;
+    glm::vec3 vertexPos;
     for (int c = 0; c < nbGridVertices; ++c)
     {
         unsigned int ix = getIndex(c, 0);
@@ -303,10 +317,10 @@ void MarchingCubeGrid::computeIsoValues(const std::vector<glm::dvec3> points, do
         double isoValue = 1.0;
         vertexPos = getVertexPosition(ix, iy, iz);
 
-        glm::dvec3 averagePosition(sumRjWj[c]);
+        glm::vec3 averagePosition(sumRjWj[c]);
         averagePosition /= sumWj[c];
 
-        glm::dvec3 deltaToAverage(vertexPos);
+        glm::vec3 deltaToAverage(vertexPos);
         deltaToAverage -= averagePosition;
 
         isoValue = sqrt(deltaToAverage.x*deltaToAverage.x +
@@ -320,7 +334,7 @@ void MarchingCubeGrid::computeIsoValues(const std::vector<glm::dvec3> points, do
 void MarchingCubeGrid::triangulate(Mesh& mesh)
 {
     std::vector<Mesh::Triangle>& triangles = mesh.triangles();
-    std::vector<glm::dvec3>& points = mesh.points();
+    std::vector<glm::vec3>& points = mesh.points();
 
     int nbVerticesData = _verticesData.size();
     for (int v = 0; v < nbVerticesData; ++v)

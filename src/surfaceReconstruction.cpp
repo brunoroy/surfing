@@ -33,7 +33,7 @@ SurfaceReconstruction::~SurfaceReconstruction()
 {
 }
 
-CloudVolume SurfaceReconstruction::getCloudVolume(std::vector<glm::dvec3> points)
+CloudVolume SurfaceReconstruction::getCloudVolume(std::vector<glm::vec3> points)
 {
     CloudVolume cloudVolume;
     cloudVolume.minimum = points.at(0);
@@ -43,7 +43,7 @@ CloudVolume SurfaceReconstruction::getCloudVolume(std::vector<glm::dvec3> points
     int nbPoints = points.size();
     for (int i = 0; i < nbPoints; ++i)
     {
-        glm::dvec3 point(points.at(i));
+        glm::vec3 point(points.at(i));
 
         if (point.x < cloudVolume.minimum.x)
             cloudVolume.minimum.x = point.x;
@@ -60,14 +60,16 @@ CloudVolume SurfaceReconstruction::getCloudVolume(std::vector<glm::dvec3> points
             cloudVolume.maximum.z = point.z;
     }
 
-    glm::dvec3 offset(5.0 * resolution, 5.0 * resolution, 5.0 * resolution);
+    double influenceRadius = 4.0 * resolution;
+    double borderSize = influenceRadius + resolution;
+     glm::vec3 offset(borderSize, borderSize, borderSize);
     cloudVolume.minimum -= offset;
     cloudVolume.maximum += offset;
 
     return cloudVolume;
 }
 
-void SurfaceReconstruction::buildSpatialGrid(const std::vector<glm::dvec3> points)
+void SurfaceReconstruction::buildSpatialGrid(const std::vector<glm::vec3> points)
 {
     int nbPoints = points.size();
     for (int i = 0; i < nbPoints; ++i)
@@ -113,7 +115,7 @@ void SurfaceReconstruction::reconstruct()
         {
             if (verbose)
                 std::clog << "model file " << modelPath << " has been loaded." << std::endl;
-            std::vector<glm::dvec3> points = _modelReader->getPoints();
+            std::vector<glm::vec3> points = _modelReader->getPoints();
             if (verbose)
                 std::clog << points.size() << " points have been read." << std::endl;
             CloudVolume cloudVolume = getCloudVolume(points);

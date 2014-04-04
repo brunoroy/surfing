@@ -46,8 +46,8 @@ bool ModelReader::readPLY(const std::string filename)
             else if (isVertexProperties)
             {
                 values = split(line);
-                glm::dvec3 point(std::stof(values.at(0)), std::stof(values.at(1)), std::stof(values.at(2)));
-                glm::dvec3 normal(std::stof(values.at(4)), std::stof(values.at(5)), std::stof(values.at(6)));
+                glm::vec3 point(std::stof(values.at(0)), std::stof(values.at(1)), std::stof(values.at(2)));
+                glm::vec3 normal(std::stof(values.at(4)), std::stof(values.at(5)), std::stof(values.at(6)));
                 _points.push_back(point);
                 _normals.push_back(normal);
             }
@@ -90,12 +90,12 @@ std::vector<std::string> ModelReader::split(const std::string input)
     return {std::istream_iterator<std::string>{streamInput}, std::istream_iterator<std::string>{}};
 }
 
-std::vector<glm::dvec3> ModelReader::getPoints()
+std::vector<glm::vec3> ModelReader::getPoints()
 {
     return _points;
 }
 
-std::vector<glm::dvec3> ModelReader::getNormals()
+std::vector<glm::vec3> ModelReader::getNormals()
 {
     return _normals;
 }
