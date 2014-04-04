@@ -1,5 +1,6 @@
 #include "marchingCubeGrid.h"
 #include "marchingCubeLookupTable.h"
+#include "computeIsoValues_CUDA.h"
 
 #include <iostream>
 #include <array>
@@ -255,7 +256,7 @@ void MarchingCubeGrid::setScalarValue(unsigned int xIndex, unsigned int yIndex, 
 }
 
 // Lorensen1987
-void MarchingCubeGrid::computeIsoValues(const std::vector<glm::vec3> points, double resolution)
+/*void MarchingCubeGrid::computeIsoValues(const std::vector<glm::vec3> points, double resolution)
 {
     double influenceRadius = resolution * 4.0;
     double influenceRadius2 = influenceRadius*influenceRadius;
@@ -283,6 +284,8 @@ void MarchingCubeGrid::computeIsoValues(const std::vector<glm::vec3> points, dou
                 {
                     unsigned int cellIndex = getGridIndex(ix, iy, iz);
                     vertexPos = getVertexPosition(ix, iy, iz);
+                    //unsigned int cellIndex = 0;//getGridIndex(ix, iy, iz);
+                    //vertexPos = glm::vec3(0.0f,0.0f,0.0f);//getVertexPosition(ix, iy, iz);
 
                     glm::vec3 delta(vertexPos);
                     delta -= points[p];
@@ -329,7 +332,7 @@ void MarchingCubeGrid::computeIsoValues(const std::vector<glm::vec3> points, dou
         isoValue -= resolution;
         setScalarValue(ix, iy, iz, isoValue);
     }
-}
+}*/
 
 void MarchingCubeGrid::triangulate(Mesh& mesh)
 {
