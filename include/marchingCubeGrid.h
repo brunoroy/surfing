@@ -7,7 +7,7 @@
 
 #include "mesh.h"
 #include "spatialGrid.h"
-#include "computeIsoValues_CUDA.h"
+//#include "computeIsoValues_CUDA.h"
 
 class MarchingCubeGrid
 {
@@ -29,11 +29,11 @@ public:
 
 public:
     MarchingCubeGrid();
-    MarchingCubeGrid(const double cubeSize, const glm::vec3 minVolume, const glm::vec3 maxVolume);
+    MarchingCubeGrid(const float cubeSize, const glm::vec3 minVolume, const glm::vec3 maxVolume);
     ~MarchingCubeGrid();
 
-    void initializeGrid(const double cubeSize, const glm::vec3 minVolume, const glm::vec3 maxVolume);
-    //void computeIsoValues(const std::vector<glm::vec3> points, double resolution);
+    void initializeGrid(const float cubeSize, const glm::vec3 minVolume, const glm::vec3 maxVolume);
+    void computeIsoValues(const std::vector<glm::vec3> points, float resolution);
     void triangulate(Mesh& mesh);
 
     int getNbVertices() {return _resX*_resY*_resZ;}
@@ -46,7 +46,7 @@ private:
     unsigned int _resX;
     unsigned int _resY;
     unsigned int _resZ;
-    double _cubeSize;
+    float _cubeSize;
     glm::vec3 _volMin;
     glm::vec3 _dimensions;
 

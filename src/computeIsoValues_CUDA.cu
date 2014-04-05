@@ -1,4 +1,5 @@
 #include "marchingCubeGrid.h"
+#include "computeIsoValues_CUDA.h"
 
 void MarchingCubeGrid::computeIsoValues(const std::vector<glm::vec3> points, double resolution)
 {

@@ -7,14 +7,14 @@
 
 static bool verbose = false;
 static char* modelPath = "models";
-static double resolution = 0.1;
+static float resolution = 0.1f;
 static bool computeNormals = false;
 
 static OptionEntry entries[] =
 {
     {"verbose", "v", OPTION_ARG_NONE, &verbose, "enables printing of messages"},
     {"path", "p", OPTION_ARG_STRING, &modelPath, "loading model files from this path (PLY and PCD are supported)"},
-    {"resolution", "r", OPTION_ARG_DOUBLE, &resolution, "sets grid cells resolution (default 0.1)"},
+    {"resolution", "r", OPTION_ARG_FLOAT, &resolution, "sets grid cells resolution (default 0.1)"},
     {"normals", "n", OPTION_ARG_NONE, &computeNormals, "enables face normals computing (default false)"},
 };
 
@@ -39,6 +39,7 @@ CloudVolume SurfaceReconstruction::getCloudVolume(std::vector<glm::vec3> points)
     cloudVolume.minimum = points.at(0);
     cloudVolume.maximum = points.at(0);
     cloudVolume.resolution = resolution;
+    std::clog << "resolution: " << resolution << std::endl;
 
     int nbPoints = points.size();
     for (int i = 0; i < nbPoints; ++i)
@@ -60,8 +61,8 @@ CloudVolume SurfaceReconstruction::getCloudVolume(std::vector<glm::vec3> points)
             cloudVolume.maximum.z = point.z;
     }
 
-    double influenceRadius = 4.0 * resolution;
-    double borderSize = influenceRadius + resolution;
+    float influenceRadius = 4.0f * resolution;
+    float borderSize = influenceRadius + resolution;
      glm::vec3 offset(borderSize, borderSize, borderSize);
     cloudVolume.minimum -= offset;
     cloudVolume.maximum += offset;
@@ -108,6 +109,8 @@ void SurfaceReconstruction::reconstruct()
     OptionParserError *error = NULL;
     if (_optionManager->parseOptions(&error))
     {
+        std::clog << "resolution: " << resolution << std::endl;
+
         _modelReader.reset(new ModelReader());
         bool modelLoaded = _modelReader->readModel(modelPath);
 

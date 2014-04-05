@@ -1,6 +1,6 @@
 #include "marchingCubeGrid.h"
-#include "marchingCubeLookupTable.h"
 #include "computeIsoValues_CUDA.h"
+#include "marchingCubeLookupTable.h"
 
 #include <iostream>
 #include <array>
@@ -10,16 +10,16 @@ MarchingCubeGrid::MarchingCubeGrid():
     _resX(0),
     _resY(0),
     _resZ(0),
-    _cubeSize(0.0)
+    _cubeSize(0.0f)
 {
 
 }
 
-MarchingCubeGrid::MarchingCubeGrid(const double cubeSize, const glm::vec3 minVolume, const glm::vec3 maxVolume):
+MarchingCubeGrid::MarchingCubeGrid(const float cubeSize, const glm::vec3 minVolume, const glm::vec3 maxVolume):
     _resX(0),
     _resY(0),
     _resZ(0),
-    _cubeSize(0.0)
+    _cubeSize(0.0f)
 {
     initializeGrid(cubeSize, minVolume, maxVolume);
 }
@@ -28,7 +28,7 @@ MarchingCubeGrid::~MarchingCubeGrid()
 {
 }
 
-void MarchingCubeGrid::initializeGrid(const double cubeSize, const glm::vec3 minVolume, const glm::vec3 maxVolume)
+void MarchingCubeGrid::initializeGrid(const float cubeSize, const glm::vec3 minVolume, const glm::vec3 maxVolume)
 {
     _count = 0;
 
@@ -256,7 +256,7 @@ void MarchingCubeGrid::setScalarValue(unsigned int xIndex, unsigned int yIndex, 
 }
 
 // Lorensen1987
-/*void MarchingCubeGrid::computeIsoValues(const std::vector<glm::vec3> points, double resolution)
+void MarchingCubeGrid::computeIsoValues(const std::vector<glm::vec3> points, float resolution)
 {
     double influenceRadius = resolution * 4.0;
     double influenceRadius2 = influenceRadius*influenceRadius;
@@ -283,28 +283,46 @@ void MarchingCubeGrid::setScalarValue(unsigned int xIndex, unsigned int yIndex, 
                 for (int ix=volume.minimum.x; ix<=volume.maximum.x; ++ix)
                 {
                     unsigned int cellIndex = getGridIndex(ix, iy, iz);
-                    vertexPos = getVertexPosition(ix, iy, iz);
-                    //unsigned int cellIndex = 0;//getGridIndex(ix, iy, iz);
-                    //vertexPos = glm::vec3(0.0f,0.0f,0.0f);//getVertexPosition(ix, iy, iz);
+                    //vertexPos = getVertexPosition(ix, iy, iz);
+
+                    //std::clog << "vertex: [" << vertexPos.x << "," << vertexPos.y << "," << vertexPos.z << "]" << std::endl;
+
+                    //vertexPos = glm::vec3((ix*_cubeSize)+_volMin.x, (iy*_cubeSize)+_volMin.y, (iz*_cubeSize)+_volMin.z);
+                    //vertexPos.x = (ix*_cubeSize)+_volMin.x;
+
+                    //std::cout << "resolution: " << volume.resolution << std::endl;
+                    //std::cout << "cubeSize: " << _cubeSize << std::endl;
+
+                    //unsigned int cellIndex = 0;
+                    float ixf = static_cast<float>(ix) * resolution;
+                    float iyf = static_cast<float>(iy) * resolution;
+                    float izf = static_cast<float>(iz) * resolution;
+                    vertexPos = glm::vec3(ixf+_volMin.x, iyf+_volMin.y, izf+_volMin.z);
+
+                    //std::clog << "vertexFloat: [" << vertexPos.x << "," << vertexPos.y << "," << vertexPos.z << "]" << std::endl;
 
                     glm::vec3 delta(vertexPos);
                     delta -= points[p];
 
+                    //double distance = sqrt(pow(delta.x, 2.0)+pow(delta.y, 2.0)+pow(delta.z, 2.0));
                     double dist2 = delta.x*delta.x + delta.y*delta.y + delta.z*delta.z;
-                    if (dist2 < influenceRadius2)
-                    {
-                        double dist = sqrt(dist2);
-                        double Wj = pow((1.0 - pow(dist/influenceRadius,2)), 3);
+                    /*if (distance > influenceRadius2)
+                    {*/
+                        if (dist2 < influenceRadius2)
+                        {
+                            double dist = sqrt(dist2);
+                            double Wj = pow((1.0 - pow(dist/influenceRadius,2)), 3);
 
-                        glm::vec3 gradWj(delta);
-                        gradWj *= -6.0*pow(influenceRadius2-dist2, 2) / influenceRadius6;
+                            glm::vec3 gradWj(delta);
+                            gradWj *= -6.0*pow(influenceRadius2-dist2, 2) / influenceRadius6;
 
-                        sumWj[cellIndex] += Wj;
+                            sumWj[cellIndex] += Wj;
 
-                        sumRjWj[cellIndex].x += points[p].x*Wj;
-                        sumRjWj[cellIndex].y += points[p].y*Wj;
-                        sumRjWj[cellIndex].z += points[p].z*Wj;
-                    }
+                            sumRjWj[cellIndex].x += points[p].x*Wj;
+                            sumRjWj[cellIndex].y += points[p].y*Wj;
+                            sumRjWj[cellIndex].z += points[p].z*Wj;
+                        }
+                    //}
                 }
             }
         }
@@ -332,7 +350,7 @@ void MarchingCubeGrid::setScalarValue(unsigned int xIndex, unsigned int yIndex, 
         isoValue -= resolution;
         setScalarValue(ix, iy, iz, isoValue);
     }
-}*/
+}
 
 void MarchingCubeGrid::triangulate(Mesh& mesh)
 {
