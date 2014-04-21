@@ -1,5 +1,4 @@
 #include "marchingCubeGrid.h"
-#include "computeIsoValues_CUDA.h"
 #include "marchingCubeLookupTable.h"
 
 #include <iostream>
@@ -273,7 +272,7 @@ void MarchingCubeGrid::computeIsoValues(const std::vector<glm::vec3> points, flo
     for (int p = 0; p < nbPoints; ++p)
     {
         CloudVolume volume;
-        volume = getCellsInRadius(points[p], influenceRadius);
+        volume = getCellsInRadius(points[p], (resolution * 2.0));
 
         glm::vec3 vertexPos;
         for (int iz=volume.minimum.z; iz<=volume.maximum.z; ++iz)
@@ -294,9 +293,18 @@ void MarchingCubeGrid::computeIsoValues(const std::vector<glm::vec3> points, flo
                     //std::cout << "cubeSize: " << _cubeSize << std::endl;
 
                     //unsigned int cellIndex = 0;
+
+                    /*float resolutionFactor = 20.0f;
+                    float ixf = static_cast<float>(ix) / resolutionFactor;
+                    float iyf = static_cast<float>(iy) / resolutionFactor;
+                    float izf = static_cast<float>(iz) / resolutionFactor;*/
+
                     float ixf = static_cast<float>(ix) * resolution;
                     float iyf = static_cast<float>(iy) * resolution;
                     float izf = static_cast<float>(iz) * resolution;
+
+                    //float ixf = static_cast<float>(99); float iyf = static_cast<float>(99); float izf = static_cast<float>(99);
+
                     vertexPos = glm::vec3(ixf+_volMin.x, iyf+_volMin.y, izf+_volMin.z);
 
                     //std::clog << "vertexFloat: [" << vertexPos.x << "," << vertexPos.y << "," << vertexPos.z << "]" << std::endl;
@@ -306,23 +314,20 @@ void MarchingCubeGrid::computeIsoValues(const std::vector<glm::vec3> points, flo
 
                     //double distance = sqrt(pow(delta.x, 2.0)+pow(delta.y, 2.0)+pow(delta.z, 2.0));
                     double dist2 = delta.x*delta.x + delta.y*delta.y + delta.z*delta.z;
-                    /*if (distance > influenceRadius2)
-                    {*/
-                        if (dist2 < influenceRadius2)
-                        {
-                            double dist = sqrt(dist2);
-                            double Wj = pow((1.0 - pow(dist/influenceRadius,2)), 3);
+                    if (dist2 < influenceRadius2)
+                    {
+                        double dist = sqrt(dist2);
+                        double Wj = pow((1.0 - pow(dist/influenceRadius,2)), 3);
 
-                            glm::vec3 gradWj(delta);
-                            gradWj *= -6.0*pow(influenceRadius2-dist2, 2) / influenceRadius6;
+                        glm::vec3 gradWj(delta);
+                        gradWj *= -6.0*pow(influenceRadius2-dist2, 2) / influenceRadius6;
 
-                            sumWj[cellIndex] += Wj;
+                        sumWj[cellIndex] += Wj;
 
-                            sumRjWj[cellIndex].x += points[p].x*Wj;
-                            sumRjWj[cellIndex].y += points[p].y*Wj;
-                            sumRjWj[cellIndex].z += points[p].z*Wj;
-                        }
-                    //}
+                        sumRjWj[cellIndex].x += points[p].x*Wj;
+                        sumRjWj[cellIndex].y += points[p].y*Wj;
+                        sumRjWj[cellIndex].z += points[p].z*Wj;
+                    }
                 }
             }
         }

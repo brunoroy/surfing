@@ -8,7 +8,7 @@ HEADERS += \
     ../core/optionManager.h
 
 SOURCES += \
-    src/*.cpp \
+    src/*.cpp #\
 #    src/*.cu
 
 #SOURCES -= \
@@ -16,7 +16,7 @@ SOURCES += \
 
 INCLUDEPATH += include/ ../core
 
-#CUDA_SOURCES += src/computeIsoValues_CUDA.cu
+#CUDA_SOURCES += src/multiplyMatrix.cu
 #CUDA_DIR = /usr/local/cuda-5.5
 #INCLUDEPATH += $$CUDA_DIR/include
 #LIBS += -L$$CUDA_DIR/lib -lcudart -lcuda
@@ -34,11 +34,6 @@ INCLUDEPATH += include/ ../core
 #cuda.output = ${OBJECTS_DIR}${QMAKE_FILE_BASE}.o
 #QMAKE_EXTRA_COMPILERS += cuda
 
-CONFIG(debug, debug|release) {
-    DESTDIR = .
-    OBJECTS_DIR = build
-} else {
-    DESTDIR = .
-    OBJECTS_DIR = build
-}
+DESTDIR = .
+OBJECTS_DIR = build
 
