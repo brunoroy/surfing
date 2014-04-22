@@ -7,10 +7,11 @@
 
 struct SpatialGridPoint
 {
-    SpatialGridPoint(const glm::vec3& paramPos, unsigned int paramID):
-        pos(paramPos), id(paramID) {}
+    SpatialGridPoint(const glm::vec3& paramPos, const glm::vec3& paramNormal, unsigned int paramID):
+        pos(paramPos), normal(paramNormal), id(paramID) {}
 
     glm::vec3 pos;
+    glm::vec3 normal;
     unsigned int id;
 };
 
@@ -74,6 +75,8 @@ SpatialGrid<T>::~SpatialGrid()
     clear();
 }
 
+#include <iostream>
+
 template<class T>
 void SpatialGrid<T>::initializeGrid(const CloudVolume volume)
 {
@@ -83,6 +86,8 @@ void SpatialGrid<T>::initializeGrid(const CloudVolume volume)
     _resX = static_cast<int>(ceil((volume.maximum.x-volume.minimum.x)/volume.resolution));
     _resY = static_cast<int>(ceil((volume.maximum.y-volume.minimum.y)/volume.resolution));
     _resZ = static_cast<int>(ceil((volume.maximum.z-volume.minimum.z)/volume.resolution));
+
+    std::clog << "grid: [" << _resX << "," << _resY << "," << _resZ << "]" << std::endl;
 
     _cellSize = volume.resolution;
     _volume.minimum = volume.minimum;

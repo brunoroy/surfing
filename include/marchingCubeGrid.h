@@ -9,6 +9,8 @@
 #include "spatialGrid.h"
 //#include "computeIsoValues_CUDA.h"
 
+typedef std::shared_ptr<SpatialGridPoints> SpatialGridPtr;
+
 class MarchingCubeGrid
 {
 public:
@@ -27,18 +29,22 @@ public:
         glm::vec3 normal;
     };
 
+//cloudVolume.resolution, cloudVolume.minimum, cloudVolume.maximum
+
 public:
     MarchingCubeGrid();
-    MarchingCubeGrid(const float cubeSize, const glm::vec3 minVolume, const glm::vec3 maxVolume);
+    MarchingCubeGrid(SpatialGridPtr spatialGrid, CloudVolume volume);
     ~MarchingCubeGrid();
 
     void initializeGrid(const float cubeSize, const glm::vec3 minVolume, const glm::vec3 maxVolume);
-    void computeIsoValues(const std::vector<glm::vec3> points, float resolution);
+    void computeIsoValues(const std::vector<glm::vec3> points, const std::vector<glm::vec3> normals, float resolution);
     void triangulate(Mesh& mesh);
 
     int getNbVertices() {return _resX*_resY*_resZ;}
 
 private:
+    SpatialGridPtr _spatialGrid;
+
     unsigned int _nbVertices;
     std::vector<int> _vertices;
     std::vector<MarchingCubeVertex> _verticesData;

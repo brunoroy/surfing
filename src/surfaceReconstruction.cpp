@@ -70,13 +70,6 @@ CloudVolume SurfaceReconstruction::getCloudVolume(std::vector<glm::vec3> points)
     return cloudVolume;
 }
 
-void SurfaceReconstruction::buildSpatialGrid(const std::vector<glm::vec3> points)
-{
-    int nbPoints = points.size();
-    for (int i = 0; i < nbPoints; ++i)
-        _spatialGrid->insert(SpatialGridPoint(points.at(i), i), points.at(i));
-}
-
 void SurfaceReconstruction::writeHeaderOutput(std::ofstream& outputFile, const unsigned int nbPoints, const unsigned int nbFaces)
 {
     outputFile << PLY_HEADER_FIRST_PART << nbPoints << std::endl;
@@ -119,6 +112,7 @@ void SurfaceReconstruction::reconstruct()
             if (verbose)
                 std::clog << "model file " << modelPath << " has been loaded." << std::endl;
             std::vector<glm::vec3> points = _modelReader->getPoints();
+            std::vector<glm::vec3> normals = _modelReader->getNormals();
             if (verbose)
                 std::clog << points.size() << " points have been read." << std::endl;
             CloudVolume cloudVolume = getCloudVolume(points);
@@ -129,18 +123,15 @@ void SurfaceReconstruction::reconstruct()
                 std::clog << "; resolution(" << cloudVolume.resolution << ")." << std::endl;
             }
 
-            Timer spatialGridTimer(true);
-            _spatialGrid.reset(new SpatialGridPoints(cloudVolume));
-            buildSpatialGrid(points);
-            auto elapsed = spatialGridTimer.elapsed();
+            Timer buildSpatialGrid(true);
+            _surfaceTriangulation.reset(new SurfaceTriangulation(cloudVolume, points, normals));
+            auto elapsed = buildSpatialGrid.elapsed();
             if (verbose)
                 std::cout << "spatial grid: " << std::fixed << elapsed.count() << " ms." << std::endl;
-
-            _surfaceTriangulation.reset(new SurfaceTriangulation(cloudVolume));
             std::shared_ptr<MarchingCubeGrid> grid = _surfaceTriangulation->getMarchingCubeGrid();
 
             Timer computerIsoValuesTimer(true);
-            grid->computeIsoValues(points, cloudVolume.resolution);
+            grid->computeIsoValues(points, normals, cloudVolume.resolution);
             elapsed = computerIsoValuesTimer.elapsed();
             if (verbose)
                 std::cout << "compute isovalues: " << std::fixed << elapsed.count() << " ms." << std::endl;

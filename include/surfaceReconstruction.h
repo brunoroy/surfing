@@ -2,7 +2,6 @@
 #define SURFACERECONSTRUCTION_H
 
 #include "surfaceTriangulation.h"
-#include "spatialGrid.h"
 #include "modelReader.h"
 #include "optionManager.h"
 
@@ -19,7 +18,6 @@ public:
     SurfaceReconstruction(int argc, char** argv);
     ~SurfaceReconstruction();
 
-    void buildSpatialGrid(const std::vector<glm::vec3> points);
     void writeMeshOutput(Mesh mesh, const std::string filename);
     void reconstruct();
 
@@ -27,7 +25,7 @@ private:
     std::shared_ptr<SurfaceTriangulation> _surfaceTriangulation;
     std::shared_ptr<OptionManager> _optionManager;
     std::shared_ptr<ModelReader> _modelReader;
-    std::shared_ptr<SpatialGridPoints> _spatialGrid;
+    //std::shared_ptr<SpatialGridPoints> _spatialGrid;
 
     CloudVolume getCloudVolume(std::vector<glm::vec3> points);
     void writeHeaderOutput(std::ofstream& outputFile, const unsigned int nbPoints, const unsigned int nbFaces);
