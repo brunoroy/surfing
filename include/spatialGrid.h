@@ -87,7 +87,7 @@ void SpatialGrid<T>::initializeGrid(const CloudVolume volume)
     _resY = static_cast<int>(ceil((volume.maximum.y-volume.minimum.y)/volume.resolution));
     _resZ = static_cast<int>(ceil((volume.maximum.z-volume.minimum.z)/volume.resolution));
 
-    std::clog << "grid: [" << _resX << "," << _resY << "," << _resZ << "]" << std::endl;
+    //std::clog << "grid: [" << _resX << "," << _resY << "," << _resZ << "]" << std::endl;
 
     _cellSize = volume.resolution;
     _volume.minimum = volume.minimum;

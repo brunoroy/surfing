@@ -6,7 +6,7 @@
 #include <fstream>
 
 static bool verbose = false;
-static char* modelPath = "models";
+static std::string modelPath;
 static float resolution = 0.1f;
 static bool computeNormals = false;
 
@@ -39,7 +39,7 @@ CloudVolume SurfaceReconstruction::getCloudVolume(std::vector<glm::vec3> points)
     cloudVolume.minimum = points.at(0);
     cloudVolume.maximum = points.at(0);
     cloudVolume.resolution = resolution;
-    std::clog << "resolution: " << resolution << std::endl;
+    //std::clog << "resolution: " << resolution << std::endl;
 
     int nbPoints = points.size();
     for (int i = 0; i < nbPoints; ++i)
@@ -88,7 +88,7 @@ void SurfaceReconstruction::writeMeshOutput(Mesh mesh, const std::string filenam
         writeHeaderOutput(meshFile, mesh.points().size(), mesh.triangles().size());
 
         for (int i = 0; i < mesh.points().size(); ++i)
-            meshFile << mesh.points().at(i).x << SPLIT_CHAR << mesh.points().at(i).y << SPLIT_CHAR << mesh.points().at(i).z << " 1 ";
+            meshFile << mesh.points().at(i).x << SPLIT_CHAR << mesh.points().at(i).y << SPLIT_CHAR << mesh.points().at(i).z << " 1 ";//0 0 0 ";
 
         for (int i = 0; i < mesh.triangles().size(); ++i)
             meshFile << "3" << SPLIT_CHAR << mesh.triangles().at(i).v[0] << SPLIT_CHAR << mesh.triangles().at(i).v[1] << SPLIT_CHAR << mesh.triangles().at(i).v[2] << std::endl;
@@ -102,9 +102,9 @@ void SurfaceReconstruction::reconstruct()
     OptionParserError *error = NULL;
     if (_optionManager->parseOptions(&error))
     {
-        std::clog << "resolution: " << resolution << std::endl;
-
+        //std::clog << "resolution: " << resolution << std::endl;
         _modelReader.reset(new ModelReader());
+        modelPath = _optionManager->getOptionRemains().at(0);
         bool modelLoaded = _modelReader->readModel(modelPath);
 
         if (modelLoaded)
@@ -130,13 +130,13 @@ void SurfaceReconstruction::reconstruct()
                 std::cout << "spatial grid: " << std::fixed << elapsed.count() << " ms." << std::endl;
             std::shared_ptr<MarchingCubeGrid> grid = _surfaceTriangulation->getMarchingCubeGrid();
 
+            Mesh mesh;
             Timer computerIsoValuesTimer(true);
             grid->computeIsoValues(points, normals, cloudVolume.resolution);
             elapsed = computerIsoValuesTimer.elapsed();
             if (verbose)
                 std::cout << "compute isovalues: " << std::fixed << elapsed.count() << " ms." << std::endl;
 
-            Mesh mesh;
             Timer triangulateTimer(true);
             grid->triangulate(mesh);
             elapsed = triangulateTimer.elapsed();
