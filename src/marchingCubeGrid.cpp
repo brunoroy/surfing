@@ -49,8 +49,10 @@ void MarchingCubeGrid::initializeGrid(const float cubeSize, const glm::vec3 minV
         _vertices[i] = -1;
 }
 
-void MarchingCubeGrid::updateNormals()
+double MarchingCubeGrid::getScalarValue(unsigned int xIndex, unsigned int yIndex, unsigned int zIndex)
 {
+    int dataIndex = _vertices[getGridIndex(xIndex, yIndex, zIndex)];
+    return (dataIndex > -1) ? _verticesData[dataIndex].value : 1.0e20;
 }
 
 unsigned int MarchingCubeGrid::getGridIndex(unsigned int xIndex, unsigned int yIndex, unsigned int zIndex)
@@ -87,7 +89,8 @@ unsigned int MarchingCubeGrid::getEdgePoint(MarchingCubeVertex& v1,
                                             MarchingCubeVertex& v7,
                                             MarchingCubeVertex& v8,
                                             int edgeNo,
-                                            std::vector<glm::vec3>& points)
+                                            std::vector<glm::vec3>& points,
+                                            std::vector<glm::vec3>& normals)
 {
     MarchingCubeVertex* va = 0x0;
     MarchingCubeVertex* vb = 0x0;
@@ -177,37 +180,37 @@ unsigned int MarchingCubeGrid::getEdgePoint(MarchingCubeVertex& v1,
                           getIndex(vb->gridIndex, 1),
                           getIndex(vb->gridIndex, 2));
 
-        //std::clog << "posA: [" << posA.x << "," << posA.y << "," << posA.z << "]" << std::endl;
-        //std::clog << "posB: [" << posB.x << "," << posB.y << "," << posB.z << "]" << std::endl;
+        double t = (0.0 - va->value) / (vb->value - va->value);
 
-        /*std::vector<SpatialGridPoint*> elements;
-        _spatialGrid->getElements(getIndex(va->gridIndex, 0), getIndex(va->gridIndex, 1), getIndex(va->gridIndex, 2), elements);
+        posA *= 1.0-t;
+        posB *= t;
 
-        if (elements.size() > 0)
+        pos = posA;
+        pos += posB;
+
+        glm::vec3 normalA = getNormal(getIndex(va->gridIndex, 0),
+                                      getIndex(va->gridIndex, 1),
+                                      getIndex(va->gridIndex, 2));
+        normalA *= 1.0-t;
+
+        glm::vec3 normal = getNormal(getIndex(vb->gridIndex, 0),
+                                    getIndex(vb->gridIndex, 1),
+                                    getIndex(vb->gridIndex, 2));
+
+        normal *= t;
+        normal += normalA;
+        normal = glm::normalize(normal);
+
+        float direction = glm::dot(pos, normal);
+        if (direction > 0.0f)
         {
-            glm::vec3 normal = elements.at(0)->normal;*/
-
-            double t = (0.0 - va->value) / (vb->value - va->value);
-
-            posA *= 1.0-t;
-            posB *= t;
-
-            pos = posA;
-            pos += posB;
-
-            //float distance = glm::dot(pos, normal);
-
-            //std::clog << "pos: [" << pos.x << "," << pos.y << "," << pos.z << "]" << std::endl;
-
-            /*if (distance > 0.0f)
-            {*/
-                pointID = points.size();
-                points.push_back(pos);
-                va->points[axis] = pointID;
-            /*}
-            else
-                pointID = -1;*/
-        //}
+            normals.push_back(normal);
+            pointID = points.size();
+            points.push_back(pos);
+            va->points[axis] = pointID;
+        }
+        else
+            pointID = -1;
     }
 
     return pointID;
@@ -259,6 +262,87 @@ glm::vec3 MarchingCubeGrid::getVertexPosition(unsigned int xIndex, unsigned int 
     return position;
 }
 
+void MarchingCubeGrid::updateNormals()
+{
+    for (long v = 0; v< getNbVertices(); ++v)
+    {
+        // Only process vertices with data
+        if (_vertices[v] == -1)
+        {
+            continue;
+        }
+
+        unsigned int ix = getIndex(v, 0);
+        unsigned int iy = getIndex(v, 1);
+        unsigned int iz = getIndex(v, 2);
+
+        double value = getScalarValue(ix, iy, iz);
+
+        glm::vec3& normal = getNormal(ix, iy, iz);
+
+        int previousDataIndex = (ix>0) ? _vertices[getGridIndex(ix-1, iy, iz)] : -1;
+        int nextDataIndex = (ix<_resX-1) ? _vertices[getGridIndex(ix+1, iy, iz)] : -1;
+        if (previousDataIndex == -1)
+        {
+            if (nextDataIndex == -1)
+                normal.x = 0.0;
+            else
+                normal.x = 2.0 * (_verticesData[nextDataIndex].value - value);
+        }
+        else if (nextDataIndex == -1)
+            normal.x = 2.0 * (value - _verticesData[previousDataIndex].value);
+        else
+            normal.x = _verticesData[nextDataIndex].value - _verticesData[previousDataIndex].value;
+
+        previousDataIndex = (iy>0) ? _vertices[getGridIndex(ix, iy-1, iz)] : -1;
+        nextDataIndex = (iy<_resY-1) ? _vertices[getGridIndex(ix, iy+1, iz)] : -1;
+        if (previousDataIndex == -1)
+        {
+            if (nextDataIndex == -1)
+                normal.y = 0.0;
+            else
+                normal.y = 2.0 * (_verticesData[nextDataIndex].value - value);
+        }
+        else if (nextDataIndex == -1)
+            normal.y = 2.0 * (value - _verticesData[previousDataIndex].value);
+        else
+            normal.y = _verticesData[nextDataIndex].value -
+                _verticesData[previousDataIndex].value;
+
+        previousDataIndex = (iz>0) ? _vertices[getGridIndex(ix, iy, iz-1)] : -1;
+        nextDataIndex = (iz<_resZ-1) ? _vertices[getGridIndex(ix, iy, iz+1)] : -1;
+        if (previousDataIndex == -1)
+        {
+            if (nextDataIndex == -1)
+                normal.z = 0.0;
+            else
+                normal.z = 2.0 * (_verticesData[nextDataIndex].value - value);
+        }
+        else if (nextDataIndex == -1)
+            normal.z = 2.0 * (value - _verticesData[previousDataIndex].value);
+        else
+            normal.z = _verticesData[nextDataIndex].value - _verticesData[previousDataIndex].value;
+
+        normal = glm::normalize(normal);
+    }
+}
+
+glm::vec3& MarchingCubeGrid::getNormal(uint xIndex, uint yIndex, uint zIndex)
+{
+    int gridIndex = getGridIndex(xIndex, yIndex, zIndex);
+    int dataIndex = _vertices[gridIndex];
+
+    if (dataIndex < 0)
+    {
+        dataIndex = _verticesData.size();
+        _verticesData.push_back(MarchingCubeVertex());
+        _vertices[gridIndex] = dataIndex;
+        _verticesData[dataIndex].gridIndex = gridIndex;
+    }
+
+    return _verticesData[dataIndex].normal;
+}
+
 void MarchingCubeGrid::setScalarValue(unsigned int xIndex, unsigned int yIndex, unsigned int zIndex, double value)
 {
     int gridIndex = getGridIndex(xIndex, yIndex, zIndex);
@@ -290,11 +374,10 @@ void MarchingCubeGrid::computeIsoValues(const std::vector<glm::vec3> points, con
     sumRjWj.resize(nbGridVertices, glm::vec3(0.0,0.0,0.0));
 
     int nbPoints = points.size();
-    std::clog << "points: " << points.size() << std::endl;
     for (int p = 0; p < nbPoints; ++p)
     {
         CloudVolume volume;
-        volume = getCellsInRadius(points[p], (resolution * 2.0));
+        volume = getCellsInRadius(points[p], (resolution * 4.0));
 
         glm::vec3 vertexPos;
         for (int iz=volume.minimum.z; iz<=volume.maximum.z; ++iz)
@@ -304,101 +387,34 @@ void MarchingCubeGrid::computeIsoValues(const std::vector<glm::vec3> points, con
                 for (int ix=volume.minimum.x; ix<=volume.maximum.x; ++ix)
                 {
                     unsigned int cellIndex = getGridIndex(ix, iy, iz);
-                    //vertexPos = getVertexPosition(ix, iy, iz);
-
-                    //std::clog << "vertex: [" << vertexPos.x << "," << vertexPos.y << "," << vertexPos.z << "]" << std::endl;
-
-                    //vertexPos = glm::vec3((ix*_cubeSize)+_volMin.x, (iy*_cubeSize)+_volMin.y, (iz*_cubeSize)+_volMin.z);
-                    //vertexPos.x = (ix*_cubeSize)+_volMin.x;
-
-                    //std::cout << "resolution: " << volume.resolution << std::endl;
-                    //std::cout << "cubeSize: " << _cubeSize << std::endl;
-
-                    //unsigned int cellIndex = 0;
-
-                    /*float resolutionFactor = 20.0f;
-                    float ixf = static_cast<float>(ix) / resolutionFactor;
-                    float iyf = static_cast<float>(iy) / resolutionFactor;
-                    float izf = static_cast<float>(iz) / resolutionFactor;*/
-
-                    //float ixf = static_cast<float>(ix) * resolution;
-                    //float iyf = static_cast<float>(iy) * resolution;
-                    //float izf = static_cast<float>(iz) * resolution;
-
-                    //float ixf = static_cast<float>(99); float iyf = static_cast<float>(99); float izf = static_cast<float>(99);
-
-                    //vertexPos = glm::vec3(ixf+_volMin.x, iyf+_volMin.y, izf+_volMin.z);
-
                     vertexPos = getVertexPosition(ix, iy, iz);
 
-                    //std::clog << "vertexFloat: [" << vertexPos.x << "," << vertexPos.y << "," << vertexPos.z << "]" << std::endl;
+                    glm::vec3 delta(vertexPos);
+                    delta -= points[p];
 
-                    //std::vector<SpatialGridPoint*> elements;
-                    //_spatialGrid->getElements(ix, iy, iz, elements);
+                    double dist2 = delta.x*delta.x + delta.y*delta.y + delta.z*delta.z;
+                    if (dist2 < influenceRadius2)
+                    {
+                        glm::vec3 normal = normals.at(p);
+                        float distance = glm::dot((vertexPos - points[p]), normal);
+                        float epsilon = -0.065f;
 
-                    /*if (elements.size() > 0)
-                    {*/
-                        //glm::vec3 pos = elements.at(0)->pos;
+                        if (distance > epsilon)
+                        {
+                            double dist = sqrt(dist2);
+                            double Wj = pow((1.0 - pow(dist/influenceRadius,2)), 3);
 
+                            glm::vec3 gradWj(delta);
+                            gradWj *= -6.0*pow(influenceRadius2-dist2, 2) / influenceRadius6;
 
-                            //double distance = sqrt(pow(delta.x, 2.0)+pow(delta.y, 2.0)+pow(delta.z, 2.0));
-                            glm::vec3 delta(vertexPos);
-                            delta -= points[p];
+                            sumWj[cellIndex] += Wj;
 
-                            double dist2 = delta.x*delta.x + delta.y*delta.y + delta.z*delta.z;
-                            if (dist2 < influenceRadius2)
-                            {
-                                //glm::vec3 origin = glm::vec3(0.0f, 0.0f, 0.0f);
-                                glm::vec3 normal = normals.at(p);
-                                //glm::vec3 delta = points[p] + (normal * resolution);
-                                //float distanceDelta = glm::distance(delta, origin);
-                                //float distancePoint = glm::distance(vertexPos, origin);
-                                //float distance = distanceDelta - distancePoint;
-
-                                float distance = glm::dot((vertexPos - points[p]), normal);
-
-                                //std::clog << "length1: " << vertexPos.length() << std::endl;
-                                //std::clog << "length2: " << delta.length() << std::endl;
-                                //std::clog << "distance: " << deltaDistance << std::endl;
-
-                                //std::clog << "pos: [" << vertexPos.x << "," << vertexPos.y << "," << vertexPos.z << "]" << std::endl;
-                                //std::clog << "normal: [" << normal.x << "," << normal.y << "," << normal.z << "]" << std::endl;
-                                //std::clog << "delta: [" << delta.x << "," << delta.y << "," << delta.z << "]" << std::endl;
-                                //glm::vec3 pointDirection = vertexPos - points.at(p);
-
-                                //std::clog << "vertexPos: [" << vertexPos.x << "," << vertexPos.y << "," << vertexPos.z << "]" << std::endl;
-                                //std::clog << "points[" << p << "]: [" << points[p].x << "," << points[p].y << "," << points[p].z << "]" << std::endl;
-
-                                //float direction = glm::dot(pointDirection, normal);
-                                //float epsilon = influenceRadius6;//-6.0*pow(influenceRadius2-dist2, 2) / influenceRadius6;
-
-                                //float epsilon = -pow(influenceRadius, influenceRadius);
-                                //float epsilon = 0.0f;
-                                float epsilon = -influenceRadius6;//0.0f;//-0.02f;
-
-                                /*if (deltaDistance < 0.0f)
-                                    std::clog << "test!" << std::endl;*/
-
-                                /*if (direction > -epsilon)
-                                {*/
-                                if (distance > epsilon)
-                                {
-                                    double dist = sqrt(dist2);
-                                    double Wj = pow((1.0 - pow(dist/influenceRadius,2)), 3);
-
-                                    glm::vec3 gradWj(delta);
-                                    gradWj *= -6.0*pow(influenceRadius2-dist2, 2) / influenceRadius6;
-
-                                    sumWj[cellIndex] += Wj;
-
-                                    sumRjWj[cellIndex].x += points[p].x*Wj;
-                                    sumRjWj[cellIndex].y += points[p].y*Wj;
-                                    sumRjWj[cellIndex].z += points[p].z*Wj;
-                                }
-                            }
+                            sumRjWj[cellIndex].x += points[p].x*Wj;
+                            sumRjWj[cellIndex].y += points[p].y*Wj;
+                            sumRjWj[cellIndex].z += points[p].z*Wj;
                         }
-                    //}
-                //}
+                    }
+                }
             }
         }
     }
@@ -406,7 +422,6 @@ void MarchingCubeGrid::computeIsoValues(const std::vector<glm::vec3> points, con
     glm::vec3 vertexPos;
     for (int c = 0; c < nbGridVertices; ++c)
     {
-
         if (sumWj[c] > 0.0f)
         {
             double isoValue = 1.0;
@@ -414,49 +429,20 @@ void MarchingCubeGrid::computeIsoValues(const std::vector<glm::vec3> points, con
             unsigned int iy = getIndex(c, 1);
             unsigned int iz = getIndex(c, 2);
 
-
             vertexPos = getVertexPosition(ix, iy, iz);
 
-            /*std::vector<SpatialGridPoint*> points;
-            _spatialGrid->getElements(ix, iy, iz, points);
+            glm::vec3 averagePosition(sumRjWj[c]);
+            averagePosition /= sumWj[c];
 
-            if (points.size() > 0)
-            {*/
-                //std::clog << "points: " << points.size() << std::endl;
+            glm::vec3 deltaToAverage(vertexPos);
+            deltaToAverage -= averagePosition;
 
-                /*for (int i = 0; i < points.size(); ++i)
-                {
-                    glm::vec3 point = points.at(i)->pos;
-                    glm::vec3 normal = points.at(i)->normal;
+            isoValue = sqrt(deltaToAverage.x*deltaToAverage.x +
+                                   deltaToAverage.y*deltaToAverage.y +
+                                   deltaToAverage.z*deltaToAverage.z);
+            isoValue -= resolution;
 
-    //                std::clog << "point: [" << point.x << "," << point.y << "," << point.z << "]" << std::endl;
-    //                std::clog << "normal: [" << normal.x << "," << normal.y << "," << normal.z << "]" << std::endl;
-                    //double distance = sqrt(pow(vertexPos.x-point.x,2.0) + pow(vertexPos.y-point.y,2.0) + pow(vertexPos.z-point.z,2.0));
-
-                    glm::vec3 pointVector = vertexPos - point;
-                    float direction = glm::dot(pointVector, normal);
-
-                    //std::clog << "direction: " << direction << std::endl;
-                    if (direction > -1.0f)
-                    {*/
-                        glm::vec3 averagePosition(sumRjWj[c]);
-                        averagePosition /= sumWj[c];
-
-                        glm::vec3 deltaToAverage(vertexPos);
-                        deltaToAverage -= averagePosition;
-
-                        isoValue = sqrt(deltaToAverage.x*deltaToAverage.x +
-                                               deltaToAverage.y*deltaToAverage.y +
-                                               deltaToAverage.z*deltaToAverage.z);
-                        isoValue -= resolution;
-                    /*}
-
-                }
-            }
-            else
-                isoValue = 1.0;*/
             setScalarValue(ix, iy, iz, isoValue);
-
         }
 
     }
@@ -466,6 +452,9 @@ void MarchingCubeGrid::triangulate(Mesh& mesh)
 {
     std::vector<Mesh::Triangle>& triangles = mesh.triangles();
     std::vector<glm::vec3>& points = mesh.points();
+    std::vector<glm::vec3>& normals = mesh.normals();
+
+    updateNormals();
 
     int nbVerticesData = _verticesData.size();
     for (int v = 0; v < nbVerticesData; ++v)
@@ -516,16 +505,28 @@ void MarchingCubeGrid::triangulate(Mesh& mesh)
                         int p1, p2, p3;
                         p1 = getEdgePoint(vertex1, vertex2, vertex3, vertex4, vertex5, vertex6, vertex7, vertex8,
                                           MarchingCubeLookupTable::triangleList[cubeIndex][i+0]+1,
-                                          points);
+                                          points, normals);
                         p2 = getEdgePoint(vertex1, vertex2, vertex3, vertex4, vertex5, vertex6, vertex7, vertex8,
                                           MarchingCubeLookupTable::triangleList[cubeIndex][i+1]+1,
-                                          points);
+                                          points, normals);
                         p3 = getEdgePoint(vertex1, vertex2, vertex3, vertex4, vertex5, vertex6, vertex7, vertex8,
                                           MarchingCubeLookupTable::triangleList[cubeIndex][i+2]+1,
-                                          points);
+                                          points, normals);
 
-                        //inverse for winding
-                        triangles.push_back(Mesh::Triangle(p3, p2, p1));
+                        if (p1 != -1 && p2 != -1 && p3 != -1)
+                        {
+                            glm::vec3 vertex1 = points.at(p1);
+                            glm::vec3 vertex2 = points.at(p2);
+                            glm::vec3 vertex3 = points.at(p3);
+
+                            glm::vec3 normal = glm::cross((vertex1 - vertex2), (vertex2 - vertex3));
+                            normal = glm::normalize(normal);
+
+                            float direction = glm::dot(normal, vertex1);
+                            //inverse for winding
+                            if (direction > 0.0f)
+                                triangles.push_back(Mesh::Triangle(p3, p2, p1));
+                        }
 
                         i += 3;
                     }
