@@ -89,7 +89,7 @@ void SurfaceReconstruction::writeMeshOutput(Mesh mesh, const std::string filenam
 
         for (int i = 0; i < mesh.points().size(); ++i)
             meshFile << mesh.points().at(i).x << SPLIT_CHAR << mesh.points().at(i).y << SPLIT_CHAR << mesh.points().at(i).z << " 1 " << \
-                        mesh.normals().at(i).x << SPLIT_CHAR << mesh.normals().at(i).y << SPLIT_CHAR << mesh.normals().at(i).z << SPLIT_CHAR;
+                        mesh.normals().at(i).x << SPLIT_CHAR << mesh.normals().at(i).y << SPLIT_CHAR << mesh.normals().at(i).z << std::endl;
 
         for (int i = 0; i < mesh.triangles().size(); ++i)
             meshFile << "3" << SPLIT_CHAR << mesh.triangles().at(i).v[0] << SPLIT_CHAR << mesh.triangles().at(i).v[1] << SPLIT_CHAR << mesh.triangles().at(i).v[2] << std::endl;

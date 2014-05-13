@@ -201,16 +201,16 @@ unsigned int MarchingCubeGrid::getEdgePoint(MarchingCubeVertex& v1,
         normal += normalA;
         normal = glm::normalize(normal);
 
-        float direction = glm::dot(pos, normal);
+        /*float direction = glm::dot(pos, normal);
         if (direction > 0.0f)
-        {
+        {*/
             normals.push_back(normal);
             pointID = points.size();
             points.push_back(pos);
             va->points[axis] = pointID;
-        }
+        /*}
         else
-            pointID = -1;
+            pointID = -1;*/
     }
 
     return pointID;
@@ -387,33 +387,36 @@ void MarchingCubeGrid::computeIsoValues(const std::vector<glm::vec3> points, con
                 for (int ix=volume.minimum.x; ix<=volume.maximum.x; ++ix)
                 {
                     unsigned int cellIndex = getGridIndex(ix, iy, iz);
-                    vertexPos = getVertexPosition(ix, iy, iz);
+                    /*if (!_spatialGrid->isCellEmpty(cellIndex))
+                    {*/
+                        vertexPos = getVertexPosition(ix, iy, iz);
 
-                    glm::vec3 delta(vertexPos);
-                    delta -= points[p];
+                        glm::vec3 delta(vertexPos);
+                        delta -= points[p];
 
-                    double dist2 = delta.x*delta.x + delta.y*delta.y + delta.z*delta.z;
-                    if (dist2 < influenceRadius2)
-                    {
-                        glm::vec3 normal = normals.at(p);
-                        float distance = glm::dot((vertexPos - points[p]), normal);
-                        float epsilon = -0.065f;
-
-                        if (distance > epsilon)
+                        double dist2 = delta.x*delta.x + delta.y*delta.y + delta.z*delta.z;
+                        if (dist2 < influenceRadius2)
                         {
-                            double dist = sqrt(dist2);
-                            double Wj = pow((1.0 - pow(dist/influenceRadius,2)), 3);
+                            /*glm::vec3 normal = normals.at(p);
+                            float distance = glm::dot((vertexPos - points[p]), normal);
+                            float epsilon = -0.065f;
 
-                            glm::vec3 gradWj(delta);
-                            gradWj *= -6.0*pow(influenceRadius2-dist2, 2) / influenceRadius6;
+                            if (distance > epsilon)
+                            {*/
+                                double dist = std::sqrt(dist2);
+                                double Wj = std::pow((1.0 - std::pow(dist/influenceRadius,2)), 3);
 
-                            sumWj[cellIndex] += Wj;
+                                glm::vec3 gradWj(delta);
+                                gradWj *= -6.0 * std::pow(influenceRadius2-dist2, 2) / influenceRadius6;
 
-                            sumRjWj[cellIndex].x += points[p].x*Wj;
-                            sumRjWj[cellIndex].y += points[p].y*Wj;
-                            sumRjWj[cellIndex].z += points[p].z*Wj;
+                                sumWj[cellIndex] += Wj;
+
+                                sumRjWj[cellIndex].x += points[p].x*Wj;
+                                sumRjWj[cellIndex].y += points[p].y*Wj;
+                                sumRjWj[cellIndex].z += points[p].z*Wj;
+                            //}
                         }
-                    }
+                    //}
                 }
             }
         }
@@ -422,8 +425,8 @@ void MarchingCubeGrid::computeIsoValues(const std::vector<glm::vec3> points, con
     glm::vec3 vertexPos;
     for (int c = 0; c < nbGridVertices; ++c)
     {
-        if (sumWj[c] > 0.0f)
-        {
+        /*if (sumWj[c] > 0.0f)
+        {*/
             double isoValue = 1.0;
             unsigned int ix = getIndex(c, 0);
             unsigned int iy = getIndex(c, 1);
@@ -443,8 +446,7 @@ void MarchingCubeGrid::computeIsoValues(const std::vector<glm::vec3> points, con
             isoValue -= resolution;
 
             setScalarValue(ix, iy, iz, isoValue);
-        }
-
+        //}
     }
 }
 
@@ -513,7 +515,7 @@ void MarchingCubeGrid::triangulate(Mesh& mesh)
                                           MarchingCubeLookupTable::triangleList[cubeIndex][i+2]+1,
                                           points, normals);
 
-                        if (p1 != -1 && p2 != -1 && p3 != -1)
+                        /*if (p1 != -1 && p2 != -1 && p3 != -1)
                         {
                             glm::vec3 vertex1 = points.at(p1);
                             glm::vec3 vertex2 = points.at(p2);
@@ -524,9 +526,9 @@ void MarchingCubeGrid::triangulate(Mesh& mesh)
 
                             float direction = glm::dot(normal, vertex1);
                             //inverse for winding
-                            if (direction > 0.0f)
+                            if (direction > 0.0f)*/
                                 triangles.push_back(Mesh::Triangle(p3, p2, p1));
-                        }
+                        //}
 
                         i += 3;
                     }

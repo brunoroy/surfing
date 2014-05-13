@@ -2,8 +2,25 @@
 #define SPATIALGRID_H
 
 #include <vector>
+#include <iostream>
 
 #include "cloudVolume.h"
+
+template<class T>
+class GridCell
+{
+public:
+    GridCell():_usedCell(false){_elements.clear();}
+    ~GridCell(){}
+
+    bool isEmpty(){return _elements.empty();}
+    void setUsed(bool used){_usedCell = used;}
+    void addElement(T element){_elements.push_back(element);}
+
+private:
+    bool _usedCell;
+    std::vector<T> _elements;
+};
 
 struct SpatialGridPoint
 {
@@ -37,7 +54,24 @@ public:
     unsigned int getResZ() {return _resZ;}
     double getCellSize() {return _cellSize;}
     glm::vec3 getVolumeStart() const {return _volume.minimum;}
-    bool isCellEmpty(int xIndex, int yIndex, int zIndex) {return _grid[getGridIndex(xIndex, yIndex, zIndex)].empty();}
+    bool isCellEmpty(int xIndex, int yIndex, int zIndex) {return _grid[getGridIndex(xIndex, yIndex, zIndex)].isEmpty();}
+    bool isCellEmpty(const uint index){return _grid[index].isEmpty();}
+    /*bool isCellUsed(const uint index)
+    {
+        bool isUsed = false;
+
+        //std::clog << "usedCell: " << _usedCellList.size() << std::endl;
+        for (int i = 0; i < _usedCellList.size(); ++i)
+        {
+            if (_usedCellList.at(i) == index)
+            {
+                isUsed = true;
+                return isUsed;
+            }
+        }
+
+        return isUsed;
+    }*/
 
 private:
     int getGridIndex(int xIndex, int yIndex, int zIndex);
@@ -49,12 +83,13 @@ private:
     int getZIndex(double zPos);
 
 private:
-    std::vector<std::vector<T> > _grid;
+    std::vector<GridCell<T>> _grid;
     unsigned int _resX;
     unsigned int _resY;
     unsigned int _resZ;
     double _cellSize;
     CloudVolume _volume;
+    std::vector<uint> _usedCellList;
 };
 
 typedef SpatialGrid<SpatialGridPoint> SpatialGridPoints;
@@ -99,7 +134,8 @@ template<class T>
 void SpatialGrid<T>::clear()
 {
     _grid.clear();
-    std::vector<std::vector<T> >().swap(_grid);
+    _usedCellList.clear();
+    std::vector<GridCell<T>>().swap(_grid);
 }
 
 template<class T>
@@ -113,7 +149,12 @@ void SpatialGrid<T>::insert(const T& element, const glm::vec3& position)
     if ((xIndex>=0) && (xIndex<_resX) && (yIndex>=0) && (yIndex<_resY) &&
             (zIndex>=0) && (zIndex<_resZ))
     {
-        _grid[cellIndex].push_back(element);
+        if (_grid.at(cellIndex).isEmpty())
+            _grid[cellIndex].setUsed(true);
+
+        _grid[cellIndex].addElement(element);
+        /*if (!isCellUsed(cellIndex))
+            _usedCellList.push_back(cellIndex);*/
     }
 }
 
